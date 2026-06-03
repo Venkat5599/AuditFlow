@@ -1,0 +1,17 @@
+[profile.default]
+src = "src"
+out = "out"
+libs = ["lib"]
+solc = "0.8.24"
+# Mantle deployments: pin EVM target to avoid PUSH0/Shanghai issues.
+evm_version = "paris"
+optimizer = true
+optimizer_runs = 200
+
+[rpc_endpoints]
+mantle = "https://rpc.mantle.xyz"            # chainid 5000
+mantle_sepolia = "https://rpc.sepolia.mantle.xyz"  # chainid 5003
+
+[etherscan]
+mantle = { key = "${MANTLESCAN_API_KEY}", url = "https://api.mantlescan.xyz/api" }
+mantle_sepolia = { key = "${MANTLESCAN_API_KEY}", url = "https://api-sepolia.mantlescan.xyz/api" }

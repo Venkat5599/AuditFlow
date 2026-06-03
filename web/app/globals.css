@@ -1,0 +1,53 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg: #05060a;
+  --color-panel: #0c0f17;
+  --color-line: #1b2030;
+  --color-brand: #5eead4;
+  --color-brand-2: #818cf8;
+  --color-accent: #f472b6;
+  --font-mono: ui-monospace, "JetBrains Mono", "SF Mono", monospace;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  background: var(--color-bg);
+  color: #e7eaf3;
+  font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection { background: color-mix(in srgb, var(--color-brand) 40%, transparent); }
+
+/* thin scrollbar for dark panels */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: #232838; border-radius: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+
+/* ---- React Bits keyframes ---- */
+@keyframes aurora {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+@keyframes shine {
+  0% { background-position: 200% center; }
+  100% { background-position: -200% center; }
+}
+@keyframes gradient-x {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+.glass {
+  background: color-mix(in srgb, var(--color-panel) 70%, transparent);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--color-line);
+}

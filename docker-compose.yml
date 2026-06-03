@@ -1,0 +1,34 @@
+# AuditFlow production stack.
+# IP-only deploy:   docker compose up -d --build        (web on :80, HTTP)
+# With a domain:    docker compose --profile tls up -d  (Caddy auto-HTTPS, set AUDITFLOW_DOMAIN)
+services:
+  web:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+    ports:
+      - "80:3000"        # IP deploy. Remove when using the tls profile (Caddy takes 80/443).
+    expose:
+      - "3000"
+
+  caddy:
+    image: caddy:2-alpine
+    profiles: ["tls"]
+    restart: unless-stopped
+    depends_on:
+      - web
+    environment:
+      AUDITFLOW_DOMAIN: ${AUDITFLOW_DOMAIN:-localhost}
+    ports:
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  caddy_data:
+  caddy_config:

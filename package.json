@@ -1,0 +1,30 @@
+{
+  "name": "auditflow",
+  "version": "0.1.0",
+  "description": "Agent-orchestrated Solidity audit: connect GitHub, audit, C4-style report, auto-PR. Mantle Turing Test Hackathon — Track 05 AI DevTools.",
+  "type": "module",
+  "scripts": {
+    "audit": "bun src/cli.ts",
+    "web": "next dev web",
+    "build": "next build web",
+    "start": "next start web"
+  },
+  "dependencies": {
+    "@octokit/rest": "^21.0.2",
+    "clsx": "^2.1.1",
+    "motion": "^12.40.0",
+    "next": "^15.1.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "tailwind-merge": "^3.6.0",
+    "viem": "^2.21.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.0",
+    "@types/node": "^22.10.0",
+    "@types/react": "^19.0.0",
+    "postcss": "^8.5.15",
+    "tailwindcss": "^4.3.0",
+    "typescript": "^5.7.0"
+  }
+}

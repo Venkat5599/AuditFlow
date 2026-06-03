@@ -1,0 +1,12 @@
+# Replace example.com with your domain. Caddy auto-provisions a Let's Encrypt cert.
+# For an IP-only / no-domain test, use `:80` instead of the domain block (no HTTPS).
+{$AUDITFLOW_DOMAIN:localhost} {
+	encode gzip zstd
+	reverse_proxy web:3000
+
+	# SSE needs buffering off so audit progress streams in real time.
+	@sse path /api/audit
+	reverse_proxy @sse web:3000 {
+		flush_interval -1
+	}
+}
