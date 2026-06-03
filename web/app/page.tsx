@@ -36,9 +36,14 @@ export default function Home() {
           <span className="inline-block h-2 w-2 rounded-full" style={{ background: "var(--green)", boxShadow: "0 0 10px var(--green)" }} />
           AUDIT<span style={{ color: "var(--t3)" }}>FLOW</span>
         </div>
-        <span className="rounded border px-3 py-1.5 text-[11px] tracking-widest" style={{ borderColor: "var(--b2)", color: "var(--t2)" }}>
-          MANTLE · TURING TEST 2026 · TRACK 05
-        </span>
+        <div className="flex items-center gap-3">
+          <a href="/chat" className="rounded px-3 py-1.5 text-[11px] font-bold tracking-widest" style={{ background: "var(--accent)", color: "var(--s0)" }}>
+            💬 AGENT CHAT
+          </a>
+          <span className="hidden rounded border px-3 py-1.5 text-[11px] tracking-widest sm:inline" style={{ borderColor: "var(--b2)", color: "var(--t2)" }}>
+            MANTLE · TRACK 05
+          </span>
+        </div>
       </header>
 
       {/* hero */}

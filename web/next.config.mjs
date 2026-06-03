@@ -12,6 +12,7 @@ const nextConfig = {
       beforeFiles: [
         { source: "/api/audit", destination: `${backend}/api/audit` },
         { source: "/api/pr", destination: `${backend}/api/pr` },
+        { source: "/api/chat", destination: `${backend}/api/chat` },
       ],
     };
   },
