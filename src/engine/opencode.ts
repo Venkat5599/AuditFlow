@@ -1,12 +1,15 @@
-// Skill engine: drive OpenCode CLI with the free DeepSeek model.
-// Falls back to raw DeepSeek API if `opencode` binary is absent.
+// Skill engine: call the OpenCode Zen gateway (OpenAI-compatible) with the free
+// DeepSeek model. No binary, no local CLI — works headless on the VPS.
+// Optional fallbacks: opencode CLI (if AUDITFLOW_ENGINE=opencode) or DeepSeek platform.
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import type { AuditTool, Finding, TargetRepo } from "../types";
 import { buildSkillPrompt } from "./prompt";
 
-// Default engine = OpenCode driving OpenRouter's free DeepSeek model (no billing).
-const MODEL = process.env.AUDITFLOW_MODEL ?? "openrouter/deepseek/deepseek-chat-v3-0324:free";
+// OpenCode Zen gateway. Key = OPENCODE_API_KEY (sk-...). Free model below.
+const ZEN_BASE = process.env.OPENCODE_BASE ?? "https://opencode.ai/zen/v1";
+const ZEN_KEY = process.env.OPENCODE_API_KEY ?? "";
+const MODEL = process.env.AUDITFLOW_MODEL ?? "deepseek-v4-flash-free";
 const DEEPSEEK_KEY = process.env.DEEPSEEK_API_KEY ?? "";
 
 function hashId(f: Partial<Finding>): string {
@@ -22,44 +25,43 @@ function extractJson(raw: string): any[] {
   try { return JSON.parse(body.slice(start, end + 1)); } catch { return []; }
 }
 
-function runOpenCode(prompt: string, cwd: string): string {
-  const res = spawnSync("opencode", ["run", "--model", MODEL, prompt], {
-    cwd, encoding: "utf8", maxBuffer: 32 * 1024 * 1024, timeout: 8 * 60_000,
+// OpenAI-compatible chat call against an arbitrary base + key.
+async function chat(base: string, key: string, model: string, prompt: string): Promise<string> {
+  const r = await fetch(`${base}/chat/completions`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
+    body: JSON.stringify({
+      model,
+      messages: [{ role: "user", content: prompt }],
+      temperature: 0,
+    }),
+  });
+  if (!r.ok) throw new Error(`gateway ${r.status}: ${(await r.text()).slice(0, 200)}`);
+  const j = await r.json();
+  return j?.choices?.[0]?.message?.content ?? "";
+}
+
+// Local opencode CLI path (opt-in via AUDITFLOW_ENGINE=opencode).
+function runOpenCodeCli(prompt: string, cwd: string): string {
+  const res = spawnSync("opencode", ["run", "--model", `opencode/${MODEL}`, prompt], {
+    cwd, encoding: "utf8", maxBuffer: 32 * 1024 * 1024, timeout: 4 * 60_000,
   });
   if (res.error) throw res.error;
   return res.stdout ?? "";
 }
 
-async function runDeepSeekDirect(prompt: string): Promise<string> {
-  const r = await fetch("https://api.deepseek.com/chat/completions", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${DEEPSEEK_KEY}` },
-    body: JSON.stringify({
-      model: "deepseek-chat",
-      messages: [{ role: "user", content: prompt }],
-      temperature: 0,
-    }),
-  });
-  const j = await r.json();
-  return j?.choices?.[0]?.message?.content ?? "";
+async function runEngine(prompt: string, cwd: string): Promise<string> {
+  if (process.env.AUDITFLOW_ENGINE === "opencode") return runOpenCodeCli(prompt, cwd);
+  if (ZEN_KEY) return chat(ZEN_BASE, ZEN_KEY, MODEL, prompt);
+  if (DEEPSEEK_KEY) return chat("https://api.deepseek.com", DEEPSEEK_KEY, "deepseek-chat", prompt);
+  return ""; // no engine configured -> no LLM findings (analyzers + Mantle still run)
 }
 
 export async function runSkill(tool: AuditTool, repo: TargetRepo, hubRoot: string): Promise<Finding[]> {
   const prompt = buildSkillPrompt(tool, repo, hubRoot);
   let raw = "";
-  // Server mode: a DeepSeek key means call the REST API directly (no opencode binary).
-  // Local mode: AUDITFLOW_ENGINE=opencode forces the CLI path.
-  const preferRest = DEEPSEEK_KEY && process.env.AUDITFLOW_ENGINE !== "opencode";
-  if (preferRest) {
-    raw = await runDeepSeekDirect(prompt);
-  } else {
-    try {
-      raw = runOpenCode(prompt, repo.localPath);
-    } catch {
-      if (!DEEPSEEK_KEY) return [];
-      raw = await runDeepSeekDirect(prompt);
-    }
-  }
+  try { raw = await runEngine(prompt, repo.localPath); }
+  catch { return []; } // one skill failing must not kill the whole audit
   return extractJson(raw).map((f) => ({
     id: hashId(f),
     severity: f.severity ?? "Low",
