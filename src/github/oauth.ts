@@ -45,3 +45,15 @@ export async function fetchUser(token: string): Promise<{ login: string; avatar_
   const j = await r.json();
   return { login: j.login, avatar_url: j.avatar_url };
 }
+
+export interface RepoInfo { name: string; full_name: string; html_url: string; private: boolean; language: string | null; pushed_at: string; }
+
+// List the authenticated user's repos (most recently pushed first).
+export async function listUserRepos(token: string): Promise<RepoInfo[]> {
+  const r = await fetch("https://api.github.com/user/repos?per_page=100&sort=pushed&affiliation=owner", {
+    headers: { Authorization: `Bearer ${token}`, Accept: "application/vnd.github+json" },
+  });
+  if (!r.ok) return [];
+  const j = (await r.json()) as any[];
+  return j.map((x) => ({ name: x.name, full_name: x.full_name, html_url: x.html_url, private: x.private, language: x.language, pushed_at: x.pushed_at }));
+}

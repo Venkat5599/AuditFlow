@@ -29,10 +29,17 @@ export default function Dashboard() {
   const [running, setRunning] = useState(false);
   const [log, setLog] = useState<string[]>([]);
   const [user, setUser] = useState<{ login: string; avatar_url: string } | null>(null);
+  const [repos, setRepos] = useState<{ name: string; full_name: string; html_url: string; language: string | null }[]>([]);
   const [prBusy, setPrBusy] = useState(false);
 
   useEffect(() => { setHist(loadHist()); }, []);
   useEffect(() => { fetch("/api/auth/me").then((r) => (r.ok ? r.json() : null)).then(setUser).catch(() => {}); }, []);
+  useEffect(() => {
+    if (!user) return;
+    fetch("/api/repos").then((r) => (r.ok ? r.json() : { repos: [] })).then((j) => setRepos(j.repos ?? [])).catch(() => {});
+  }, [user]);
+
+  function runRepo(fullName: string) { run(`https://github.com/${fullName}`); }
 
   const latest = hist[0];
   const stats = useMemo(() => {
@@ -44,11 +51,12 @@ export default function Dashboard() {
     };
   }, [hist, latest]);
 
-  async function run() {
-    if (!url.trim() || running) return;
-    setRunning(true); setLog([]);
+  async function run(target?: string) {
+    const repoUrl = (target ?? url).trim();
+    if (!repoUrl || running) return;
+    setRunning(true); setLog([]); setView("dashboard");
     let summary: Summary | null = null, findings: Finding[] = [], sessionId = "";
-    const res = await fetch("/api/audit", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ url: url.trim() }) });
+    const res = await fetch("/api/audit", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ url: repoUrl }) });
     const reader = res.body!.getReader(); const dec = new TextDecoder(); let buf = "";
     for (;;) {
       const { value, done } = await reader.read(); if (done) break;
@@ -63,7 +71,7 @@ export default function Dashboard() {
       }
     }
     if (summary) {
-      const repo = url.trim().replace(/^https?:\/\/github\.com\//, "");
+      const repo = repoUrl.replace(/^https?:\/\/github\.com\//, "");
       const next = [{ repo, ts: Date.now(), summary, findings, sessionId }, ...hist];
       setHist(next); saveHist(next);
     }
@@ -112,14 +120,25 @@ export default function Dashboard() {
             </button>
           ))}
         </nav>
-        <div className="mb-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Recent repos</div>
+        <div className="mb-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+          {user ? "Your repos" : "Recent repos"}
+        </div>
         <div className="flex-1 space-y-0.5 overflow-auto">
-          {hist.length === 0 && <div className="px-2.5 text-[12px] text-muted-foreground">No audits yet</div>}
-          {hist.slice(0, 12).map((a, i) => (
-            <div key={i} className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-[12px] text-muted-foreground">
-              <FolderGit2 className="h-3.5 w-3.5 shrink-0" /> <span className="truncate">{a.repo}</span>
-            </div>
-          ))}
+          {!user && hist.length === 0 && <div className="px-2.5 text-[12px] text-muted-foreground">Connect GitHub to list repos</div>}
+          {user && repos.length === 0 && <div className="px-2.5 text-[12px] text-muted-foreground">Loading repos…</div>}
+          {user
+            ? repos.slice(0, 40).map((r) => (
+                <button key={r.full_name} onClick={() => runRepo(r.full_name)} disabled={running}
+                  className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-[12px] text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50">
+                  <FolderGit2 className="h-3.5 w-3.5 shrink-0" /> <span className="truncate">{r.name}</span>
+                  {r.language && <span className="ml-auto text-[9px] text-muted-foreground/60">{r.language}</span>}
+                </button>
+              ))
+            : hist.slice(0, 12).map((a, i) => (
+                <div key={i} className="flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-[12px] text-muted-foreground">
+                  <FolderGit2 className="h-3.5 w-3.5 shrink-0" /> <span className="truncate">{a.repo}</span>
+                </div>
+              ))}
         </div>
         <a href="/" className="mt-2 flex items-center gap-2 px-2.5 text-[12px] text-muted-foreground hover:text-foreground"><ArrowLeft className="h-3.5 w-3.5" /> Back to site</a>
       </aside>
@@ -144,7 +163,7 @@ export default function Dashboard() {
               <>
                 <input value={url} onChange={(e) => setUrl(e.target.value)} onKeyDown={(e) => e.key === "Enter" && run()}
                   placeholder="github.com/owner/repo" className="w-44 rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-ring sm:w-64" />
-                <button onClick={run} disabled={running || !url}
+                <button onClick={() => run()} disabled={running || !url}
                   className="inline-flex items-center gap-1.5 rounded-lg bg-foreground px-4 py-2 text-sm font-medium text-background disabled:opacity-40">
                   <Plus className="h-4 w-4" /> {running ? "Running…" : "Run audit"}
                 </button>

@@ -4,6 +4,7 @@
 // findings conversationally. Heavy work runs on the VPS (Vercel proxies here).
 import { chatStream, findRepoUrl, AGENT_SYSTEM, type ChatMessage } from "../../../../src/engine/chat";
 import { runAudit } from "../../../../src/orchestrator/pipeline";
+import { listUserRepos } from "../../../../src/github/oauth";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -18,7 +19,6 @@ export async function POST(req: Request) {
   const { messages } = (await req.json()) as { messages: ChatMessage[] };
   const token = cookie(req, "af_gh_token") ?? process.env.GITHUB_TOKEN ?? undefined;
   const last = [...messages].reverse().find((m) => m.role === "user")?.content ?? "";
-  const repoUrl = findRepoUrl(last);
 
   const stream = new ReadableStream({
     async start(controller) {
@@ -27,19 +27,35 @@ export async function POST(req: Request) {
       try {
         const convo: ChatMessage[] = [{ role: "system", content: AGENT_SYSTEM }, ...messages];
 
+        // Resolve the target repo: a full GitHub URL, or a repo NAME matched
+        // against the connected user's repos.
+        let repoUrl = findRepoUrl(last);
+        let repos: { name: string; full_name: string; html_url: string }[] = [];
+        if (token) {
+          try { repos = await listUserRepos(token); } catch { /* ignore */ }
+          if (!repoUrl) {
+            const lc = last.toLowerCase();
+            const hit = repos.find((r) => new RegExp(`\\b${r.name.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`).test(lc));
+            if (hit) repoUrl = hit.html_url;
+          }
+          if (repos.length) {
+            convo.splice(1, 0, { role: "system", content: `The connected user's repos (audit by name): ${repos.slice(0, 40).map((r) => r.name).join(", ")}.` });
+          }
+        }
+
         if (repoUrl) {
-          send({ type: "status", text: `Running audit on ${repoUrl}…` });
-          const { report } = await runAudit({
-            url: repoUrl, githubToken: token, createPR: false,
+          const wantPR = Boolean(token); // connected -> open a PR after the audit
+          send({ type: "status", text: `Running audit on ${repoUrl}…${wantPR ? " (will open a PR)" : ""}` });
+          const { report, prUrl } = await runAudit({
+            url: repoUrl, githubToken: token, createPR: wantPR,
             onEvent: (e) => send({ type: "phase", phase: e.phase, detail: e.detail }),
           });
-          send({ type: "findings", sessionId: "", summary: report.summary, findings: report.findings });
-          // Feed a compact findings digest to the model to explain.
+          send({ type: "findings", sessionId: "", summary: report.summary, findings: report.findings, prUrl });
           const digest = report.findings.slice(0, 20)
             .map((f) => `- [${f.severity}] ${f.title} (${f.file}:${f.lines[0]}) — ${f.impact}`).join("\n");
           convo.push({
             role: "user",
-            content: `Audit of ${repoUrl} finished. Summary ${JSON.stringify(report.summary)}.\nTop findings:\n${digest}\n\nGive me a short security briefing: the most serious issues, why they matter on Mantle, and what to fix first.`,
+            content: `Audit of ${repoUrl} finished. Summary ${JSON.stringify(report.summary)}.\nTop findings:\n${digest}\n${prUrl ? `An auto-fix PR was opened: ${prUrl}` : "No PR opened (not connected, or no safe fixes)."}\n\nGive me a short security briefing: the most serious issues, why they matter on Mantle, what to fix first${prUrl ? ", and mention the PR link" : ""}. The repo clone was deleted after auditing.`,
           });
         }
 
