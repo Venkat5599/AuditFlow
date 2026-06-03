@@ -11,6 +11,7 @@ export function Providers({ children }: { children: ReactNode }): ReactNode {
       attribute="class"
       defaultTheme="light"
       enableSystem={false}
+      storageKey="auditflow-theme-v2"
       disableTransitionOnChange
     >
       <ReducedMotionProvider>
