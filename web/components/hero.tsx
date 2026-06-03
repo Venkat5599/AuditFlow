@@ -116,7 +116,7 @@ export function Hero(): ReactNode {
           </motion.p>
 
           <motion.a
-            href="#audit"
+            href="/chat"
             className="group relative cursor-pointer inline-flex items-center max-[850px]:w-full"
             variants={fadeInScale}
             transition={{ duration: 0.8, ease }}

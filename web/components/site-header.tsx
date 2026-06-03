@@ -18,12 +18,12 @@ export function SiteHeader(): ReactNode {
         </a>
         <nav className="flex items-center gap-1 max-[850px]:hidden">
           <a href="/#arsenal" className="rounded-full px-4 py-2 text-sm font-medium text-foreground/80 transition-colors hover:bg-foreground/5 hover:text-foreground">Arsenal</a>
-          <a href="/#how" className="rounded-full px-4 py-2 text-sm font-medium text-foreground/80 transition-colors hover:bg-foreground/5 hover:text-foreground">How it works</a>
-          <a href="/#audit" className="rounded-full px-4 py-2 text-sm font-medium text-foreground/80 transition-colors hover:bg-foreground/5 hover:text-foreground">Audit</a>
+          <a href="/#how-it-works" className="rounded-full px-4 py-2 text-sm font-medium text-foreground/80 transition-colors hover:bg-foreground/5 hover:text-foreground">How it works</a>
+          <a href="/chat" className="rounded-full px-4 py-2 text-sm font-medium text-foreground/80 transition-colors hover:bg-foreground/5 hover:text-foreground">Agent</a>
         </nav>
         <a href="/chat" className="group relative inline-flex items-center">
           <span className="absolute inset-y-0 right-0 w-[calc(100%-1.5rem)] rounded-xl bg-accent" />
-          <span className="relative z-10 rounded-xl bg-foreground px-5 py-3 text-sm font-medium text-background">Agent Chat</span>
+          <span className="relative z-10 rounded-xl bg-foreground px-5 py-3 text-sm font-medium text-background">Run an audit</span>
           <span className="relative -left-px z-10 flex h-10 w-10 items-center justify-center rounded-xl text-black">
             <ArrowDownRight className="h-4 w-4 transition-transform duration-300 group-hover:-rotate-45" />
           </span>

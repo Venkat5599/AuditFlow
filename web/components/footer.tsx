@@ -7,7 +7,7 @@ const footerLinks = {
   menu: [
     { label: "Arsenal", href: "#arsenal" },
     { label: "How it works", href: "#how-it-works" },
-    { label: "Run audit", href: "#audit" },
+    { label: "Run audit", href: "/chat" },
   ],
   company: [
     { label: "Agent Chat", href: "/chat" },
@@ -37,7 +37,7 @@ export function Footer(): ReactNode {
             </h2>
 
             <a
-              href="#audit"
+              href="/chat"
               className="flex items-center justify-center gap-2 px-7 py-3.5 bg-foreground hover:bg-foreground/90 text-background rounded-xl text-sm font-medium transition-colors"
             >
               Run an audit
