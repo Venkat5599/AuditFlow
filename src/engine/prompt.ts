@@ -29,7 +29,7 @@ export function buildSkillPrompt(tool: AuditTool, repo: TargetRepo, hubRoot: str
   const fileList = repo.contracts.slice(0, 80).join("\n");
   return [
     `# Audit methodology (${tool.id})`,
-    skillBody.slice(0, 8000),
+    skillBody.slice(0, 12000),
     `\n# Target: ${repo.owner}/${repo.name} (${repo.framework})`,
     `Contracts to audit (paths relative to repo root ${repo.localPath}):`,
     fileList,
