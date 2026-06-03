@@ -1,6 +1,6 @@
 // Orchestration spine: clone -> detect -> route -> audit -> report -> PR.
 import type { AuditReport, Finding } from "../types";
-import { cloneRepo, openFixPR } from "../github/github";
+import { cloneRepo, openFixPR, cleanupClone, sweepTemp } from "../github/github";
 import { findContracts, detectFramework } from "../detect/detect";
 import { routeTools } from "../routing/router";
 import { runSkill } from "../engine/opencode";
@@ -21,6 +21,7 @@ export async function runAudit(opts: RunOptions): Promise<{ report: AuditReport;
   const emit = opts.onEvent ?? (() => {});
   const startedAt = new Date().toISOString();
 
+  sweepTemp(); // clear any stale clones from abandoned runs first
   emit({ phase: "clone", detail: opts.url });
   const repo = cloneRepo(opts.url, opts.githubToken);
 
@@ -63,6 +64,11 @@ export async function runAudit(opts: RunOptions): Promise<{ report: AuditReport;
   emit({ phase: "report", detail: `${all.length} raw findings` });
   const report = buildReport(repo, all, [...tools.map((t) => t.id), "mantle-detectors"], startedAt);
 
+  // Disk policy: the audit clone is no longer needed — delete it NOW, before the
+  // (possibly long) attestation/PR steps and before any triage idle wait.
+  cleanupClone(repo.localPath);
+  report.repo = { ...report.repo, localPath: "" };
+
   // On-chain attestation on Mantle (env-gated; no-op without registry+key).
   try {
     const att = await attestOnMantle(report);
@@ -72,7 +78,8 @@ export async function runAudit(opts: RunOptions): Promise<{ report: AuditReport;
   let prUrl: string | undefined;
   if (opts.createPR && opts.githubToken) {
     emit({ phase: "pr", detail: "opening fix PR" });
-    try { prUrl = await openFixPR(repo, report, opts.githubToken); }
+    // openFixPR re-clones fresh (transient) — the audit clone is already gone.
+    try { prUrl = await openFixPR(report.repo, report, opts.githubToken); }
     catch (e) { emit({ phase: "pr", detail: `skipped: ${(e as Error).message}` }); }
   }
   emit({ phase: "done", detail: prUrl ?? "report ready" });

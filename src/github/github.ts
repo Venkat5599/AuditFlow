@@ -1,6 +1,8 @@
 // GitHub integration: clone target + open an auto-fix PR with applied diffs.
+// Disk policy: clones are TRANSIENT — created for one operation, deleted right
+// after. Never held during the idle wait between audit and PR.
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, writeFileSync } from "node:fs";
+import { mkdtempSync, writeFileSync, rmSync, readdirSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Octokit } from "@octokit/rest";
@@ -11,6 +13,24 @@ export function parseRepoUrl(url: string): { owner: string; name: string } {
   const m = url.replace(/\.git$/, "").match(/github\.com[/:]([^/]+)\/([^/]+)/);
   if (!m) throw new Error(`Not a GitHub URL: ${url}`);
   return { owner: m[1], name: m[2] };
+}
+
+// Best-effort delete of a transient clone dir.
+export function cleanupClone(dir?: string) {
+  if (!dir) return;
+  try { rmSync(dir, { recursive: true, force: true }); } catch { /* already gone */ }
+}
+
+// Safety net: sweep stale auditflow-* temp clones older than maxAgeMs.
+export function sweepTemp(maxAgeMs = 15 * 60_000) {
+  try {
+    const t = tmpdir();
+    for (const name of readdirSync(t)) {
+      if (!name.startsWith("auditflow-") && !name.startsWith("af-validate-")) continue;
+      const p = join(t, name);
+      try { if (Date.now() - statSync(p).mtimeMs > maxAgeMs) rmSync(p, { recursive: true, force: true }); } catch {}
+    }
+  } catch {}
 }
 
 // Clone (shallow) with the user's OAuth token so private repos work too.
@@ -25,54 +45,64 @@ export function cloneRepo(url: string, token?: string): TargetRepo {
   return { url, owner, name, defaultBranch: branch, localPath: dir, contracts: [], framework: "unknown" };
 }
 
-// Apply each finding's suggestedDiff, commit on a new branch, open PR.
+// Open an auto-fix PR. Clones the repo FRESH (transient), applies selected +
+// validated diffs, pushes, opens the PR, then deletes the clone in finally.
+// The audit's own clone is already gone by the time this runs.
 export async function openFixPR(
   repo: TargetRepo, report: AuditReport, token: string, selectedIds?: string[]
 ): Promise<string> {
-  // Triage: if a selection is given, only consider those findings.
   const chosen = selectedIds?.length
     ? report.findings.filter((f) => selectedIds.includes(f.id))
     : report.findings;
-  // Only PR fixes that apply cleanly AND compile (when a compiler exists).
-  const validation = validateDiffs(repo, chosen);
-  const fixes = safeDiffs(validation);
-  const rejected = validation.length - fixes.length;
-  const branch = `auditflow/fixes-${Date.now()}`;
-  const sh = (args: string[]) => spawnSync("git", args, { cwd: repo.localPath, encoding: "utf8" });
+  const withDiffs = chosen.filter((f) => f.suggestedDiff?.trim());
+  if (withDiffs.length === 0) throw new Error("No fixes selected to apply");
 
-  sh(["checkout", "-b", branch]);
-  let applied = 0;
-  for (const f of fixes) {
-    const patchFile = join(repo.localPath, ".auditflow.patch");
-    writeFileSync(patchFile, f.suggestedDiff!.endsWith("\n") ? f.suggestedDiff! : f.suggestedDiff! + "\n");
-    const r = sh(["apply", "--whitespace=fix", patchFile]);
-    if (r.status === 0) applied++;
+  // Fresh transient clone for the PR operation.
+  const fresh = cloneRepo(repo.url, token);
+  try {
+    // Validate diffs against this clone (apply-check + compile gate).
+    const validation = validateDiffs(fresh, withDiffs);
+    const fixes = safeDiffs(validation);
+    const rejected = validation.length - fixes.length;
+    if (fixes.length === 0) throw new Error("No diffs passed the validation gate");
+
+    const branch = `auditflow/fixes-${Date.now()}`;
+    const sh = (args: string[]) => spawnSync("git", args, { cwd: fresh.localPath, encoding: "utf8" });
+    sh(["checkout", "-b", branch]);
+
+    let applied = 0;
+    for (const f of fixes) {
+      const patchFile = join(fresh.localPath, ".auditflow.patch");
+      writeFileSync(patchFile, f.suggestedDiff!.endsWith("\n") ? f.suggestedDiff! : f.suggestedDiff! + "\n");
+      if (sh(["apply", "--whitespace=fix", patchFile]).status === 0) applied++;
+    }
+    if (applied === 0) throw new Error("No diffs applied cleanly");
+
+    writeFileSync(join(fresh.localPath, "AUDITFLOW_REPORT.md"), report.markdown);
+    sh(["add", "-A"]);
+    sh(["-c", "user.email=bot@auditflow.dev", "-c", "user.name=AuditFlow Bot",
+        "commit", "-m", `fix: apply AuditFlow security fixes (${applied} findings)`]);
+
+    const pushUrl = `https://x-access-token:${token}@github.com/${fresh.owner}/${fresh.name}.git`;
+    const push = sh(["push", pushUrl, branch]);
+    if (push.status !== 0) throw new Error(`push failed: ${push.stderr}`);
+
+    const gh = new Octokit({ auth: token });
+    const body = [
+      `## 🛡️ AuditFlow automated security fixes`,
+      `Applied **${applied}** fixes from an AuditFlow audit (${rejected} rejected by validation gate).`,
+      ``,
+      `| Severity | Count |`, `|---|---|`,
+      ...(["High", "Medium", "Low", "QA", "Gas"] as const).map((s) => `| ${s} | ${report.summary[s]} |`),
+      ``,
+      `Full report committed as \`AUDITFLOW_REPORT.md\`. Review each diff before merging.`,
+    ].join("\n");
+    const pr = await gh.pulls.create({
+      owner: fresh.owner, repo: fresh.name, head: branch, base: fresh.defaultBranch,
+      title: `AuditFlow: ${applied} security fixes`, body,
+    });
+    return pr.data.html_url;
+  } finally {
+    cleanupClone(fresh.localPath);
   }
-  if (applied === 0) throw new Error("No diffs applied cleanly");
-
-  // Drop the report into the repo for reviewers.
-  writeFileSync(join(repo.localPath, "AUDITFLOW_REPORT.md"), report.markdown);
-  sh(["add", "-A"]);
-  sh(["-c", "user.email=bot@auditflow.dev", "-c", "user.name=AuditFlow Bot",
-      "commit", "-m", `fix: apply AuditFlow security fixes (${applied} findings)`]);
-
-  const pushUrl = `https://x-access-token:${token}@github.com/${repo.owner}/${repo.name}.git`;
-  const push = sh(["push", pushUrl, branch]);
-  if (push.status !== 0) throw new Error(`push failed: ${push.stderr}`);
-
-  const gh = new Octokit({ auth: token });
-  const body = [
-    `## 🛡️ AuditFlow automated security fixes`,
-    `Applied **${applied}** fixes from an AuditFlow audit (${rejected} rejected by validation gate).`,
-    ``,
-    `| Severity | Count |`, `|---|---|`,
-    ...(["High", "Medium", "Low", "QA", "Gas"] as const).map((s) => `| ${s} | ${report.summary[s]} |`),
-    ``,
-    `Full report committed as \`AUDITFLOW_REPORT.md\`. Review each diff before merging.`,
-  ].join("\n");
-  const pr = await gh.pulls.create({
-    owner: repo.owner, repo: repo.name, head: branch, base: repo.defaultBranch,
-    title: `AuditFlow: ${applied} security fixes`, body,
-  });
-  return pr.data.html_url;
 }

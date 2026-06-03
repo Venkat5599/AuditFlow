@@ -12,6 +12,8 @@
     "allowJs": true,
     "noEmit": true,
     "types": ["node"],
+    "baseUrl": ".",
+    "paths": { "@/*": ["web/*"] },
     "plugins": [{ "name": "next" }]
   },
   "include": ["src/**/*", "web/**/*"]
