@@ -4,8 +4,6 @@ import { FeaturesBento } from "@/components/features-bento";
 import { Footer } from "@/components/footer";
 import { Hero } from "@/components/hero";
 import { HowItWorks } from "@/components/how-it-works";
-import { Pricing } from "@/components/pricing";
-import { Testimonials } from "@/components/testimonials";
 import AuditApp from "@/components/AuditApp";
 import type { ReactNode } from "react";
 
@@ -15,7 +13,6 @@ export default function HomePage(): ReactNode {
       <Hero />
       <BlurInHeadline />
       <FeaturesBento />
-      <Testimonials />
 
       {/* AuditFlow live panel */}
       <section id="audit" className="mx-auto max-w-4xl px-4 py-20">
@@ -25,7 +22,6 @@ export default function HomePage(): ReactNode {
       </section>
 
       <HowItWorks />
-      <Pricing />
       <FAQ />
       <Footer />
     </main>

@@ -4,7 +4,7 @@ import { useRef, useEffect, useState } from "react";
 import type { ReactNode } from "react";
 
 const headline =
-  "Modern teams use our platform to elevate every customer touchpoint, blending human expertise with AI capabilities in a unified system that drives continuous improvement across all channels.";
+  "31 audit skills — pashov agents, QuillAI detectors, nemesis, plus Slither and Aderyn — orchestrated by signal, deduped, and graded into a Code4rena-style report with validated auto-fix pull requests.";
 
 export function BlurInHeadline(): ReactNode {
   const containerRef = useRef<HTMLDivElement>(null);

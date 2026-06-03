@@ -18,16 +18,10 @@ const fadeInScale = {
   visible: { opacity: 1, scale: 1, filter: "blur(0px)" },
 };
 
-const logos: LogoItem[] = [
-  { node: <Image src="/mock-logos/acmecorp.svg" alt="Acme Corp" width={120} height={32} className="h-[1em] w-auto" /> },
-  { node: <Image src="/mock-logos/altshift.svg" alt="Altshift" width={120} height={32} className="h-[1em] w-auto" /> },
-  { node: <Image src="/mock-logos/biosynthesis.svg" alt="Biosynthesis" width={120} height={32} className="h-[1em] w-auto" /> },
-  { node: <Image src="/mock-logos/boltshift.svg" alt="Boltshift" width={120} height={32} className="h-[1em] w-auto" /> },
-  { node: <Image src="/mock-logos/capsule.svg" alt="Capsule" width={120} height={32} className="h-[1em] w-auto" /> },
-  { node: <Image src="/mock-logos/catalog.svg" alt="Catalog" width={120} height={32} className="h-[1em] w-auto" /> },
-  { node: <Image src="/mock-logos/cloudwatch.svg" alt="Cloudwatch" width={120} height={32} className="h-[1em] w-auto" /> },
-  { node: <Image src="/mock-logos/commandr.svg" alt="Commandr" width={120} height={32} className="h-[1em] w-auto" /> },
-];
+const TOOLS = ["Slither", "Aderyn", "pashov", "QuillAI", "nemesis", "Mantle", "Foundry", "Octokit", "DeepSeek", "Code4rena"];
+const logos: LogoItem[] = TOOLS.map((name) => ({
+  node: <span className="text-xl font-semibold tracking-tight text-black/70">{name}</span>,
+}));
 
 const PARALLAX_INTENSITY = 20;
 
@@ -92,7 +86,7 @@ export function Hero(): ReactNode {
             variants={fadeInUp}
             transition={{ duration: 0.8, ease }}
           >
-            Now Available
+            Mantle · Turing Test 2026 · Track 05
             <span className="text-accent">✦</span>
           </motion.div>
 
@@ -102,27 +96,27 @@ export function Hero(): ReactNode {
               variants={fadeInUp}
               transition={{ duration: 0.8, ease }}
             >
-              Build Faster
+              Audit any Solidity repo.
             </motion.span>
             <motion.span
               className="block"
               variants={fadeInUp}
               transition={{ duration: 0.8, ease }}
             >
-              Ship with <span className="italic font-serif text-accent">Confidence</span>
+              Ship the <span className="rounded-2xl bg-accent px-3 not-italic text-black">fixes.</span>
             </motion.span>
           </h1>
 
           <motion.p
-            className="text-lg text-neutral-600 mb-8"
+            className="text-lg text-neutral-600 mb-8 max-w-2xl"
             variants={fadeInUp}
             transition={{ duration: 0.8, ease }}
           >
-            The modern platform for teams who want to move fast without breaking things
+            Connect GitHub, paste a repo. AuditFlow routes it through 31 audit skills + Mantle L2 detectors, writes a Code4rena-style report, and opens a validated auto-fix PR.
           </motion.p>
 
-          <motion.button
-            type="button"
+          <motion.a
+            href="#audit"
             className="group relative cursor-pointer inline-flex items-center max-[850px]:w-full"
             variants={fadeInScale}
             transition={{ duration: 0.8, ease }}
@@ -130,11 +124,11 @@ export function Hero(): ReactNode {
             whileTap={{ scale: 0.98 }}
           >
             <span className="absolute right-0 inset-y-0 w-[calc(100%-2rem)] max-[850px]:w-full rounded-xl bg-accent" />
-            <span className="relative z-10 px-6 py-3 rounded-xl bg-black text-white font-medium max-[850px]:flex-1">Get Started</span>
+            <span className="relative z-10 px-6 py-3 rounded-xl bg-black text-white font-medium max-[850px]:flex-1">Run an audit</span>
             <span className="relative -left-px z-10 w-11 h-11 rounded-xl flex items-center justify-center text-black">
               <ArrowDownRight className="w-5 h-5 transition-transform duration-300 group-hover:-rotate-45" />
             </span>
-          </motion.button>
+          </motion.a>
         </motion.div>
       </div>
 

@@ -8,21 +8,21 @@ import type { ReactNode } from "react";
 const steps = [
   {
     icon: CalendarCheck,
-    title: "Schedule kickoff",
+    title: "Connect & paste",
     description:
-      "Align on scope, structure, and timeline. Whether it's a quick setup or a full migration, we'll take it from there.",
+      "OAuth your GitHub and drop a Solidity repo URL. AuditFlow shallow-clones it and detects contracts + build framework. No setup.",
   },
   {
     icon: Users,
-    title: "Real-time collaboration",
+    title: "Route & audit",
     description:
-      "Work alongside our team with full visibility. Every step follows best practices and thorough QA to ensure quality.",
+      "A signal-based router picks the relevant skills — pashov, QuillAI, nemesis — and runs them with Slither, Aderyn, and Mantle L2 detectors in parallel, deduped.",
   },
   {
     icon: Rocket,
-    title: "Launch and scale",
+    title: "Report & ship",
     description:
-      "Go live with confidence. Our AI continuously learns and improves, helping your team scale effortlessly.",
+      "Get a Code4rena-style report graded by severity, pick the fixes, and open a validated auto-fix PR. The clone is deleted the instant the report is built.",
   },
 ];
 
@@ -74,17 +74,17 @@ export function HowItWorks(): ReactNode {
             How it works
           </h2>
           <p className="mt-6 max-w-md text-lg leading-relaxed text-foreground/60">
-            Your platform, configured by experts and launched on an{" "}
-            <span className="font-medium text-foreground">Enterprise plan</span>
-            , ready to grow with you.
+            From a GitHub URL to a validated pull request — on a{" "}
+            <span className="font-medium text-foreground">free engine</span>
+            , with nothing hoarded on disk.
           </p>
           <motion.a
-            href="#"
+            href="#audit"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             className="mt-8 inline-flex items-center rounded-xl bg-foreground px-6 py-3 text-sm font-semibold text-background transition-colors hover:bg-foreground/90"
           >
-            Schedule kickoff
+            Run an audit
           </motion.a>
         </div>
 
