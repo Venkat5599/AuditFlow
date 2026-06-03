@@ -9,6 +9,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Static analyzers (optional but recommended for the deterministic baseline).
 RUN pip3 install --break-system-packages slither-analyzer || true
 
+# OpenCode CLI — the LLM audit engine. Reads OPENROUTER_API_KEY for the free DeepSeek model.
+RUN bun add -g opencode-ai && ln -sf /root/.bun/bin/opencode /usr/local/bin/opencode || true
+ENV PATH="/root/.bun/bin:${PATH}"
+
 COPY package.json bun.lock* ./
 RUN bun install --frozen-lockfile || bun install
 COPY . .

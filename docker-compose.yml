@@ -10,7 +10,7 @@ services:
       NODE_ENV: production
       PORT: "3000"
     ports:
-      - "80:3000"        # IP deploy. Remove when using the tls profile (Caddy takes 80/443).
+      - "8080:3000"      # host:container. Use 80 if free; 8080 when something else owns :80.
     expose:
       - "3000"
 

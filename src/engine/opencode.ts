@@ -5,7 +5,8 @@ import { createHash } from "node:crypto";
 import type { AuditTool, Finding, TargetRepo } from "../types";
 import { buildSkillPrompt } from "./prompt";
 
-const MODEL = process.env.AUDITFLOW_MODEL ?? "deepseek/deepseek-chat"; // free tier
+// Default engine = OpenCode driving OpenRouter's free DeepSeek model (no billing).
+const MODEL = process.env.AUDITFLOW_MODEL ?? "openrouter/deepseek/deepseek-chat-v3-0324:free";
 const DEEPSEEK_KEY = process.env.DEEPSEEK_API_KEY ?? "";
 
 function hashId(f: Partial<Finding>): string {
@@ -46,11 +47,18 @@ async function runDeepSeekDirect(prompt: string): Promise<string> {
 export async function runSkill(tool: AuditTool, repo: TargetRepo, hubRoot: string): Promise<Finding[]> {
   const prompt = buildSkillPrompt(tool, repo, hubRoot);
   let raw = "";
-  try {
-    raw = runOpenCode(prompt, repo.localPath);
-  } catch {
-    if (!DEEPSEEK_KEY) return [];
+  // Server mode: a DeepSeek key means call the REST API directly (no opencode binary).
+  // Local mode: AUDITFLOW_ENGINE=opencode forces the CLI path.
+  const preferRest = DEEPSEEK_KEY && process.env.AUDITFLOW_ENGINE !== "opencode";
+  if (preferRest) {
     raw = await runDeepSeekDirect(prompt);
+  } else {
+    try {
+      raw = runOpenCode(prompt, repo.localPath);
+    } catch {
+      if (!DEEPSEEK_KEY) return [];
+      raw = await runDeepSeekDirect(prompt);
+    }
   }
   return extractJson(raw).map((f) => ({
     id: hashId(f),
