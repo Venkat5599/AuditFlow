@@ -6,7 +6,13 @@ import ChatAgent from "@/components/ChatAgent";
 type Sev = "High" | "Medium" | "Low" | "QA" | "Gas";
 type Finding = { id: string; severity: Sev; title: string; file: string; lines: [number, number]; tool: string; suggestedDiff?: string };
 type Summary = Record<Sev, number>;
-type Audit = { repo: string; ts: number; summary: Summary; findings: Finding[]; prUrl?: string };
+type Audit = { repo: string; ts: number; summary: Summary; findings: Finding[]; prUrl?: string; sessionId?: string };
+
+const GithubMark = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+    <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.6 7.6 0 014 0c1.53-1.03 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0016 8c0-4.42-3.58-8-8-8z"/>
+  </svg>
+);
 
 const SEV_COLOR: Record<Sev, string> = { High: "#ef4444", Medium: "#f59e0b", Low: "#3b82f6", QA: "#8b5cf6", Gas: "#10b981" };
 const HIST_KEY = "auditflow.history";
@@ -23,6 +29,7 @@ export default function Dashboard() {
   const [running, setRunning] = useState(false);
   const [log, setLog] = useState<string[]>([]);
   const [user, setUser] = useState<{ login: string; avatar_url: string } | null>(null);
+  const [prBusy, setPrBusy] = useState(false);
 
   useEffect(() => { setHist(loadHist()); }, []);
   useEffect(() => { fetch("/api/auth/me").then((r) => (r.ok ? r.json() : null)).then(setUser).catch(() => {}); }, []);
@@ -40,7 +47,7 @@ export default function Dashboard() {
   async function run() {
     if (!url.trim() || running) return;
     setRunning(true); setLog([]);
-    let summary: Summary | null = null, findings: Finding[] = [];
+    let summary: Summary | null = null, findings: Finding[] = [], sessionId = "";
     const res = await fetch("/api/audit", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ url: url.trim() }) });
     const reader = res.body!.getReader(); const dec = new TextDecoder(); let buf = "";
     for (;;) {
@@ -51,17 +58,33 @@ export default function Dashboard() {
         const line = p.replace(/^data: /, "").trim(); if (!line) continue;
         const m = JSON.parse(line);
         if (m.type === "event") setLog((l) => [...l, `${m.phase}: ${m.detail}`]);
-        if (m.type === "result") { summary = m.summary; findings = m.findings ?? []; }
+        if (m.type === "result") { summary = m.summary; findings = m.findings ?? []; sessionId = m.sessionId ?? ""; }
         if (m.type === "error") setLog((l) => [...l, `error: ${m.message}`]);
       }
     }
     if (summary) {
       const repo = url.trim().replace(/^https?:\/\/github\.com\//, "");
-      const next = [{ repo, ts: Date.now(), summary, findings }, ...hist];
+      const next = [{ repo, ts: Date.now(), summary, findings, sessionId }, ...hist];
       setHist(next); saveHist(next);
     }
     setRunning(false); setUrl("");
   }
+
+  // Open an auto-fix PR for the latest audit (needs GitHub connected + a live session).
+  async function createPR() {
+    if (!latest?.sessionId || prBusy) return;
+    setPrBusy(true);
+    const ids = latest.findings.filter((f) => f.suggestedDiff).map((f) => f.id);
+    const r = await fetch("/api/pr", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sessionId: latest.sessionId, selectedIds: ids }) });
+    const j = await r.json();
+    if (j.prUrl) {
+      const next = hist.map((a) => (a === latest ? { ...a, prUrl: j.prUrl } : a));
+      setHist(next); saveHist(next); setView("prs");
+    } else { setLog((l) => [...l, `PR error: ${j.error}`]); }
+    setPrBusy(false);
+  }
+
+  const fixable = latest?.findings.filter((f) => f.suggestedDiff).length ?? 0;
 
   const NAV: { id: View; icon: typeof LayoutDashboard; label: string }[] = [
     { id: "dashboard", icon: LayoutDashboard, label: "Dashboard" },
@@ -106,16 +129,28 @@ export default function Dashboard() {
         {/* run bar */}
         <div className="mb-6 flex items-center justify-between gap-3">
           <h1 className="text-xl font-semibold">{view === "dashboard" ? "Audits" : view === "findings" ? "Findings" : view === "prs" ? "Pull Requests" : "Agent"}</h1>
-          {view !== "agent" && (
-            <div className="flex items-center gap-2">
-              <input value={url} onChange={(e) => setUrl(e.target.value)} onKeyDown={(e) => e.key === "Enter" && run()}
-                placeholder="github.com/owner/repo" className="w-56 rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-ring sm:w-72" />
-              <button onClick={run} disabled={running || !url}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-foreground px-4 py-2 text-sm font-medium text-background disabled:opacity-40">
-                <Plus className="h-4 w-4" /> {running ? "Running…" : "Run audit"}
-              </button>
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            {user ? (
+              <span className="hidden items-center gap-1.5 rounded-lg border border-border bg-frame px-3 py-2 text-xs sm:flex">
+                <img src={user.avatar_url} width={18} height={18} className="rounded-full" alt="" />
+                <b>{user.login}</b>
+              </span>
+            ) : (
+              <a href="/api/auth/github" className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-frame px-3 py-2 text-sm font-medium hover:bg-muted">
+                <GithubMark className="h-4 w-4" /> Connect GitHub
+              </a>
+            )}
+            {view !== "agent" && (
+              <>
+                <input value={url} onChange={(e) => setUrl(e.target.value)} onKeyDown={(e) => e.key === "Enter" && run()}
+                  placeholder="github.com/owner/repo" className="w-44 rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-ring sm:w-64" />
+                <button onClick={run} disabled={running || !url}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-foreground px-4 py-2 text-sm font-medium text-background disabled:opacity-40">
+                  <Plus className="h-4 w-4" /> {running ? "Running…" : "Run audit"}
+                </button>
+              </>
+            )}
+          </div>
         </div>
 
         {running && (
@@ -126,6 +161,23 @@ export default function Dashboard() {
 
         {view === "dashboard" && (
           <>
+            {latest && fixable > 0 && (
+              <div className="mb-5 flex items-center justify-between rounded-xl border border-accent/60 bg-card-secondary p-3">
+                <span className="text-sm text-card-foreground">
+                  Latest audit on <b>{latest.repo}</b> · {fixable} auto-fixable finding(s){latest.prUrl ? " · PR opened" : ""}.
+                </span>
+                {latest.prUrl ? (
+                  <a href={latest.prUrl} className="rounded-lg bg-foreground px-4 py-2 text-sm font-medium text-background">View PR ⎇</a>
+                ) : user ? (
+                  <button onClick={createPR} disabled={prBusy || !latest.sessionId}
+                    className="rounded-lg bg-foreground px-4 py-2 text-sm font-medium text-background disabled:opacity-40">
+                    {prBusy ? "Opening PR…" : "Create auto-fix PR"}
+                  </button>
+                ) : (
+                  <a href="/api/auth/github" className="rounded-lg border border-border bg-frame px-4 py-2 text-sm font-medium">Connect GitHub to PR</a>
+                )}
+              </div>
+            )}
             <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
               {[
                 { label: "High severity", value: stats.high, sub: `across ${stats.contracts} contracts`, t: "latest" },
