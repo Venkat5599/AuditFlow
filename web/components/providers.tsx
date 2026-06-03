@@ -9,8 +9,8 @@ export function Providers({ children }: { children: ReactNode }): ReactNode {
   return (
     <ThemeProvider
       attribute="class"
-      defaultTheme="system"
-      enableSystem
+      defaultTheme="light"
+      enableSystem={false}
       disableTransitionOnChange
     >
       <ReducedMotionProvider>
