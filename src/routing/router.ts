@@ -41,9 +41,11 @@ export function routeTools(repo: TargetRepo, hubRoot: string): RoutingResult {
     })
     .sort((a, b) => b.score - a.score);
 
-  // Always keep both analyzers (deterministic baseline) + top skills.
+  // Always keep both analyzers (deterministic baseline). Run all matched skills,
+  // capped by AUDITFLOW_MAX_SKILLS (default high = "use everything relevant").
+  const maxSkills = Number(process.env.AUDITFLOW_MAX_SKILLS ?? 40);
   const analyzers = scored.filter((s) => s.t.kind === "analyzer").map((s) => s.t);
-  const skills = scored.filter((s) => s.t.kind === "skill").slice(0, 4).map((s) => s.t);
+  const skills = scored.filter((s) => s.t.kind === "skill").slice(0, maxSkills).map((s) => s.t);
 
   return { tools: [...analyzers, ...skills], signals, reason };
 }

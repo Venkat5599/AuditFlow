@@ -43,13 +43,22 @@ export async function runAudit(opts: RunOptions): Promise<{ report: AuditReport;
   // Mantle-specific detectors — always run (Track-05 differentiator).
   emit({ phase: "mantle", detail: "mantle-detectors" });
   all.push(...runMantleDetectors(repo));
-  const skillResults = await Promise.all(
-    tools.filter((t) => t.kind === "skill").map(async (t) => {
-      emit({ phase: "audit", detail: t.id });
-      return runSkill(t, repo, hubRoot);
-    })
-  );
-  for (const r of skillResults) all.push(...r);
+  // Concurrency-limited so the free LLM gateway isn't rate-limited (429) when
+  // many skills run. AUDITFLOW_CONCURRENCY controls the parallel window.
+  const skillTools = tools.filter((t) => t.kind === "skill");
+  const limit = Math.max(1, Number(process.env.AUDITFLOW_CONCURRENCY ?? 4));
+  let cursor = 0;
+  const worker = async () => {
+    for (;;) {
+      const i = cursor++;
+      if (i >= skillTools.length) return;
+      const t = skillTools[i];
+      emit({ phase: "audit", detail: `${t.id} (${i + 1}/${skillTools.length})` });
+      try { all.push(...(await runSkill(t, repo, hubRoot))); }
+      catch { /* one skill failing must not kill the audit */ }
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(limit, skillTools.length) }, worker));
 
   emit({ phase: "report", detail: `${all.length} raw findings` });
   const report = buildReport(repo, all, [...tools.map((t) => t.id), "mantle-detectors"], startedAt);

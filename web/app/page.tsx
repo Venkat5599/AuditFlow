@@ -3,8 +3,8 @@ import AnimatedContent from "../components/reactbits/AnimatedContent";
 import AuditApp from "../components/AuditApp";
 
 const STATS = [
-  { v: 39, s: "+", l: "TOOLS ORCHESTRATED", c: "var(--blue)" },
-  { v: 8, s: "", l: "PASHOV AGENTS", c: "var(--green)" },
+  { v: 31, s: "", l: "AUDIT SKILLS", c: "var(--green)" },
+  { v: 11, s: "", l: "QUILLAI DETECTORS", c: "var(--blue)" },
   { v: 7, s: "", l: "MANTLE DETECTORS", c: "var(--amber)" },
   { v: 5, s: "", l: "SEVERITY TIERS", c: "var(--purple)" },
 ];
