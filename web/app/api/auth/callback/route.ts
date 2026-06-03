@@ -1,5 +1,5 @@
-// GET /api/auth/callback?code&state -> verify state, exchange, set token cookie, redirect home.
-import { exchangeCode, verifyState } from "../../../../../src/github/oauth";
+// GET /api/auth/callback?code&state -> CSRF-check via state cookie, exchange, set token, back to dashboard.
+import { exchangeCode } from "../../../../../src/github/oauth";
 
 export const runtime = "nodejs";
 
@@ -15,16 +15,17 @@ export async function GET(req: Request) {
   const state = u.searchParams.get("state");
   const saved = cookie(req, "af_oauth_state");
 
-  if (!code || !verifyState(state) || state !== saved) {
-    return new Response("Invalid OAuth state", { status: 400 });
+  // CSRF protection = the state param must equal the cookie we set (both present).
+  // (HMAC verification dropped — too fragile across redeploys; cookie binding suffices.)
+  if (!code || !state || state !== saved) {
+    return new Response("Invalid OAuth state — please click Connect GitHub again.", { status: 400 });
   }
   try {
     const token = await exchangeCode(code);
     return new Response(null, {
       status: 302,
       headers: {
-        Location: "/",
-        // 8h session. httpOnly so client JS can't read the token.
+        Location: "/dashboard",
         "Set-Cookie": `af_gh_token=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=28800`,
       },
     });
