@@ -14,14 +14,28 @@ Mantle, remember: MNT is the native gas token (ETH is an ERC-20), L1 data fee do
 blockhash is a weak RNG on L2. Keep answers tight and technical. Use markdown.`;
 
 // Yields text chunks as they stream in. Falls back to a single non-streamed answer on error.
+const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
+
 export async function* chatStream(messages: ChatMessage[]): AsyncGenerator<string> {
   if (!ZEN_KEY) { yield "⚠️ Engine not configured (OPENCODE_API_KEY missing)."; return; }
-  const r = await fetch(`${ZEN_BASE}/chat/completions`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${ZEN_KEY}` },
-    body: JSON.stringify({ model: MODEL, messages, temperature: 0.3, stream: true }),
-  });
-  if (!r.ok || !r.body) { yield `⚠️ Engine error ${r.status}.`; return; }
+  let r: Response | null = null;
+  for (let attempt = 0; attempt < 4; attempt++) {
+    r = await fetch(`${ZEN_BASE}/chat/completions`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${ZEN_KEY}` },
+      body: JSON.stringify({ model: MODEL, messages, temperature: 0.3, stream: true }),
+    });
+    if (r.status === 429) {
+      const wait = Number(r.headers.get("retry-after")) * 1000 || 1500 * 2 ** attempt;
+      await sleep(Math.min(wait, 15000));
+      continue;
+    }
+    break;
+  }
+  if (!r || !r.ok || !r.body) {
+    yield r?.status === 429 ? "⚠️ The free model is rate-limited right now — give it a few seconds and try again." : `⚠️ Engine error ${r?.status ?? "unknown"}.`;
+    return;
+  }
 
   const reader = r.body.getReader();
   const dec = new TextDecoder();

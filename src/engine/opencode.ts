@@ -25,20 +25,27 @@ function extractJson(raw: string): any[] {
   try { return JSON.parse(body.slice(start, end + 1)); } catch { return []; }
 }
 
+const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
+
 // OpenAI-compatible chat call against an arbitrary base + key.
+// Retries on 429 (free-tier rate limit) with exponential backoff.
 async function chat(base: string, key: string, model: string, prompt: string): Promise<string> {
-  const r = await fetch(`${base}/chat/completions`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
-    body: JSON.stringify({
-      model,
-      messages: [{ role: "user", content: prompt }],
-      temperature: 0,
-    }),
-  });
-  if (!r.ok) throw new Error(`gateway ${r.status}: ${(await r.text()).slice(0, 200)}`);
-  const j = await r.json();
-  return j?.choices?.[0]?.message?.content ?? "";
+  for (let attempt = 0; attempt < 4; attempt++) {
+    const r = await fetch(`${base}/chat/completions`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
+      body: JSON.stringify({ model, messages: [{ role: "user", content: prompt }], temperature: 0 }),
+    });
+    if (r.status === 429) {
+      const wait = Number(r.headers.get("retry-after")) * 1000 || 1500 * 2 ** attempt;
+      await sleep(Math.min(wait, 15000));
+      continue;
+    }
+    if (!r.ok) throw new Error(`gateway ${r.status}: ${(await r.text()).slice(0, 200)}`);
+    const j = await r.json();
+    return j?.choices?.[0]?.message?.content ?? "";
+  }
+  return ""; // give up after retries — skill yields no findings rather than crashing
 }
 
 // Local opencode CLI path (opt-in via AUDITFLOW_ENGINE=opencode).
