@@ -128,7 +128,7 @@ export function FAQ(): ReactNode {
 
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <motion.a
-              href="/chat"
+              href="/dashboard"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               className="inline-flex items-center rounded-xl bg-foreground px-6 py-2.5 text-sm font-semibold text-background transition-colors hover:bg-foreground/90"
@@ -136,7 +136,7 @@ export function FAQ(): ReactNode {
               Run an audit
             </motion.a>
             <motion.a
-              href="/chat"
+              href="/dashboard"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               className="inline-flex items-center rounded-xl border border-border bg-frame px-6 py-2.5 text-sm font-semibold text-foreground transition-colors"

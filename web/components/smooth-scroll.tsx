@@ -9,8 +9,8 @@ import { features } from "@/lib/config";
  * See: https://github.com/darkroomengineering/lenis#options
  */
 const LENIS_OPTIONS = {
-  duration: 1.6,
-  easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+  // Lighter than the template default (duration 1.6) — lerp is cheaper, less jank.
+  lerp: 0.12,
   orientation: "vertical" as const,
   gestureOrientation: "vertical" as const,
   smoothWheel: true,

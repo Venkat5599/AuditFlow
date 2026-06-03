@@ -3,8 +3,8 @@
 import { LogoLoop, type LogoItem } from "@/components/logo-loop";
 import { HeroMock } from "@/components/hero-mock";
 import { ArrowDownRight } from "lucide-react";
-import { motion, useMotionValue, useSpring } from "motion/react";
-import { useRef, type ReactNode, type MouseEvent } from "react";
+import { motion } from "motion/react";
+import { type ReactNode } from "react";
 
 const ease = [0.23, 1, 0.32, 1] as const;
 
@@ -23,54 +23,13 @@ const logos: LogoItem[] = TOOLS.map((name) => ({
   node: <span className="text-xl font-semibold tracking-tight text-black/70">{name}</span>,
 }));
 
-const PARALLAX_INTENSITY = 20;
-
 export function Hero(): ReactNode {
-  const sectionRef = useRef<HTMLElement>(null);
-  
-  const mouseX = useMotionValue(0);
-  const mouseY = useMotionValue(0);
-  
-  const springConfig = { damping: 25, stiffness: 150 };
-  const x = useSpring(mouseX, springConfig);
-  const y = useSpring(mouseY, springConfig);
-
-  const handleMouseMove = (e: MouseEvent<HTMLElement>) => {
-    if (!sectionRef.current) return;
-    
-    if (window.innerWidth < 850) return;
-    
-    const rect = sectionRef.current.getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
-    
-    const offsetX = (e.clientX - centerX) / (rect.width / 2);
-    const offsetY = (e.clientY - centerY) / (rect.height / 2);
-    
-    mouseX.set(offsetX * PARALLAX_INTENSITY);
-    mouseY.set(offsetY * PARALLAX_INTENSITY);
-  };
-
-  const handleMouseLeave = () => {
-    mouseX.set(0);
-    mouseY.set(0);
-  };
-
   return (
-    <section 
-      ref={sectionRef}
-      className="flex flex-col relative" 
-      style={{ colorScheme: 'light' }}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-    >
-      <motion.div 
-        className="absolute inset-0 min-[850px]:inset-2.5 bg-cover bg-center bg-no-repeat -z-10 brightness-125 rounded-br-4xl rounded-bl-4xl min-[850px]:scale-105"
-        style={{ 
-          backgroundImage: 'url(/BG.jpg)',
-          x,
-          y,
-        }}
+    <section className="flex flex-col relative" style={{ colorScheme: 'light' }}>
+      {/* Static background — no per-mousemove parallax (kept scroll smooth). */}
+      <div
+        className="absolute inset-0 min-[850px]:inset-2.5 bg-cover bg-center bg-no-repeat -z-10 rounded-br-4xl rounded-bl-4xl"
+        style={{ backgroundImage: 'url(/BG.jpg)' }}
         aria-hidden="true"
       />
       
@@ -116,7 +75,7 @@ export function Hero(): ReactNode {
           </motion.p>
 
           <motion.a
-            href="/chat"
+            href="/dashboard"
             className="group relative cursor-pointer inline-flex items-center max-[850px]:w-full"
             variants={fadeInScale}
             transition={{ duration: 0.8, ease }}

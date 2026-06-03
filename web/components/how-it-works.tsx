@@ -79,7 +79,7 @@ export function HowItWorks(): ReactNode {
             , with nothing hoarded on disk.
           </p>
           <motion.a
-            href="/chat"
+            href="/dashboard"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             className="mt-8 inline-flex items-center rounded-xl bg-foreground px-6 py-3 text-sm font-semibold text-background transition-colors hover:bg-foreground/90"

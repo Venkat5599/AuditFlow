@@ -7,7 +7,7 @@ const footerLinks = {
   menu: [
     { label: "Arsenal", href: "#arsenal" },
     { label: "How it works", href: "#how-it-works" },
-    { label: "Run audit", href: "/chat" },
+    { label: "Run audit", href: "/dashboard" },
   ],
   company: [
     { label: "Agent Chat", href: "/chat" },
@@ -25,9 +25,9 @@ export function Footer(): ReactNode {
     <footer className="relative pt-38 mt-24 mx-2.5 max-[850px]:mx-0">
       <div className="absolute left-1/2 -translate-x-1/2 top-0 w-full max-w-5xl">
         <div className="relative w-full rounded-3xl overflow-hidden shadow-2xl/15">
-          <div 
-            className="absolute inset-0 bg-center bg-no-repeat brightness-150 blur scale-125"
-            style={{ backgroundImage: 'url(/BG.jpg)', backgroundSize: '150%' }}
+          <div
+            className="absolute inset-0 bg-center bg-no-repeat brightness-150"
+            style={{ backgroundImage: 'url(/BG.jpg)', backgroundSize: 'cover' }}
             aria-hidden="true"
           />
           
@@ -37,7 +37,7 @@ export function Footer(): ReactNode {
             </h2>
 
             <a
-              href="/chat"
+              href="/dashboard"
               className="flex items-center justify-center gap-2 px-7 py-3.5 bg-foreground hover:bg-foreground/90 text-background rounded-xl text-sm font-medium transition-colors"
             >
               Run an audit
