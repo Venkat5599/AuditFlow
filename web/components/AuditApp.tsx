@@ -88,6 +88,7 @@ export default function AuditApp() {
           <div className="mb-5 flex items-center gap-2 text-sm">
             <img src={user.avatar_url} width={22} height={22} className="rounded-full" alt="" />
             <span className="text-white/70">Connected as <b className="text-white">{user.login}</b></span>
+            <a href="/api/auth/logout" className="ml-auto text-xs text-white/40 hover:text-white/70">Disconnect</a>
           </div>
         ) : (
           <a href="/api/auth/github"
