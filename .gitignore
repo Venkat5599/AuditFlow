@@ -11,3 +11,5 @@ contracts/lib
 web/tsconfig.json
 web/next-env.d.ts
 auditflow-report.md
+
+.vercel

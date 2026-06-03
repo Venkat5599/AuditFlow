@@ -3,7 +3,7 @@ import { getSession, dropSession } from "../../../../src/orchestrator/sessions";
 import { openFixPR } from "../../../../src/github/github";
 
 export const runtime = "nodejs";
-export const maxDuration = 400;
+export const maxDuration = 300;
 
 function cookie(req: Request, name: string): string | null {
   const raw = req.headers.get("cookie") ?? "";

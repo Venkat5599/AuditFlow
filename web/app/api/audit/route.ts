@@ -4,7 +4,7 @@ import { runAudit } from "../../../../src/orchestrator/pipeline";
 import { saveSession } from "../../../../src/orchestrator/sessions";
 
 export const runtime = "nodejs";
-export const maxDuration = 800;
+export const maxDuration = 300;
 
 function cookie(req: Request, name: string): string | null {
   const raw = req.headers.get("cookie") ?? "";

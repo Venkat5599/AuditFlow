@@ -1,0 +1,11 @@
+node_modules
+web/.next
+.next
+.git
+contracts/lib
+contracts/out
+contracts/cache
+*.log
+.env
+.env.*
+!.env.example
