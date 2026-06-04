@@ -2,6 +2,7 @@
 import { ArrowDownRight } from "lucide-react";
 import { motion } from "motion/react";
 import type { ReactNode } from "react";
+import { LogoMark } from "@/components/Logo";
 
 const ease = [0.23, 1, 0.32, 1] as const;
 
@@ -12,8 +13,8 @@ export function SiteHeader(): ReactNode {
       className="fixed left-1/2 top-2.5 z-[9998] w-full max-w-5xl -translate-x-1/2 rounded-b-4xl bg-frame shadow-2xl/20 max-[850px]:top-0 max-[850px]:left-0 max-[850px]:right-0 max-[850px]:w-full max-[850px]:max-w-none max-[850px]:translate-x-0 max-[850px]:rounded-none"
     >
       <div className="flex h-20 items-center justify-between px-6 max-[850px]:h-18">
-        <a href="/" className="flex items-center gap-2">
-          <div className="h-6 w-6 rounded-full bg-accent" />
+        <a href="/" className="flex items-center gap-2 text-accent">
+          <LogoMark className="h-6 w-6" title="AuditFlow" />
           <span className="text-lg font-semibold leading-none text-foreground">AuditFlow</span>
         </a>
         <nav className="flex items-center gap-1 max-[850px]:hidden">

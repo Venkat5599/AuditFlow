@@ -1,6 +1,7 @@
 "use client";
 import { LayoutDashboard, ShieldAlert, FileSearch, GitPullRequest, Bot, FolderGit2, Plus } from "lucide-react";
 import type { ReactNode } from "react";
+import { LogoMark } from "@/components/Logo";
 
 const NAV = [
   { icon: LayoutDashboard, label: "Dashboard", active: true },
@@ -33,9 +34,9 @@ export function HeroMock(): ReactNode {
     <div className="flex w-full overflow-hidden rounded-2xl border border-neutral-200 bg-white text-neutral-900 shadow-2xl">
       {/* sidebar */}
       <aside className="hidden w-52 shrink-0 border-r border-neutral-200 p-4 md:block">
-        <div className="mb-6 flex items-center gap-2">
-          <div className="h-5 w-5 rounded-full bg-accent" />
-          <span className="text-sm font-semibold">AuditFlow</span>
+        <div className="mb-6 flex items-center gap-2 text-accent">
+          <LogoMark className="h-5 w-5" title="AuditFlow" />
+          <span className="text-sm font-semibold text-foreground">AuditFlow</span>
         </div>
         <div className="mb-2 text-[10px] font-medium uppercase tracking-wider text-neutral-400">Workspace</div>
         <nav className="mb-6 space-y-0.5">

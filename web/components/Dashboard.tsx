@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { LayoutDashboard, ShieldAlert, FileSearch, GitPullRequest, Bot, FolderGit2, Plus, ArrowLeft, Code2 } from "lucide-react";
 import ChatAgent from "@/components/ChatAgent";
 import CodeViewer from "@/components/CodeViewer";
+import { LogoMark } from "@/components/Logo";
 
 type Sev = "High" | "Medium" | "Low" | "QA" | "Gas";
 type Finding = { id: string; severity: Sev; title: string; file: string; lines: [number, number]; tool: string; suggestedDiff?: string };
@@ -146,9 +147,9 @@ export default function Dashboard() {
     <div className="flex h-screen overflow-hidden bg-background text-foreground">
       {/* sidebar */}
       <aside className="hidden w-60 shrink-0 flex-col border-r border-border bg-frame p-4 md:flex">
-        <div className="mb-6 flex items-center gap-2">
-          <div className="h-5 w-5 rounded-full bg-accent" />
-          <span className="text-sm font-semibold">AuditFlow</span>
+        <div className="mb-6 flex items-center gap-2 text-accent">
+          <LogoMark className="h-5 w-5" title="AuditFlow" />
+          <span className="text-sm font-semibold text-foreground">AuditFlow</span>
         </div>
         <div className="mb-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Workspace</div>
         <nav className="mb-6 space-y-0.5">
