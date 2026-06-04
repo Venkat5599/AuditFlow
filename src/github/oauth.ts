@@ -57,3 +57,35 @@ export async function listUserRepos(token: string): Promise<RepoInfo[]> {
   const j = (await r.json()) as any[];
   return j.map((x) => ({ name: x.name, full_name: x.full_name, html_url: x.html_url, private: x.private, language: x.language, pushed_at: x.pushed_at }));
 }
+
+// GitHub REST helper — token optional (public repos work unauthenticated, just rate-limited).
+function gh(path: string, token?: string) {
+  const headers: Record<string, string> = { Accept: "application/vnd.github+json" };
+  if (token) headers.Authorization = `Bearer ${token}`;
+  return fetch(`https://api.github.com${path}`, { headers });
+}
+
+export interface BranchInfo { name: string; sha: string; }
+export interface RepoTarget { defaultBranch: string; branches: BranchInfo[]; }
+
+// List a repo's branches + its default branch (for the Target step dropdown).
+export async function listBranches(owner: string, name: string, token?: string): Promise<RepoTarget> {
+  const meta = await gh(`/repos/${owner}/${name}`, token);
+  const defaultBranch = meta.ok ? ((await meta.json()) as any).default_branch ?? "main" : "main";
+  const br = await gh(`/repos/${owner}/${name}/branches?per_page=100`, token);
+  const branches: BranchInfo[] = br.ok
+    ? ((await br.json()) as any[]).map((b) => ({ name: b.name, sha: b.commit?.sha ?? "" }))
+    : [];
+  return { defaultBranch, branches };
+}
+
+// List every .sol file at a given ref via the git-tree API (no clone needed).
+export async function listSolFiles(owner: string, name: string, ref: string, token?: string): Promise<string[]> {
+  const r = await gh(`/repos/${owner}/${name}/git/trees/${encodeURIComponent(ref)}?recursive=1`, token);
+  if (!r.ok) return [];
+  const j = (await r.json()) as any;
+  return (j.tree ?? [])
+    .filter((t: any) => t.type === "blob" && typeof t.path === "string" && t.path.endsWith(".sol"))
+    .map((t: any) => t.path as string)
+    .sort();
+}

@@ -34,12 +34,28 @@ export function sweepTemp(maxAgeMs = 15 * 60_000) {
 }
 
 // Clone (shallow) with the user's OAuth token so private repos work too.
-export function cloneRepo(url: string, token?: string): TargetRepo {
+// Clone a repo. `ref` (optional) pins to a branch, tag, or commit SHA.
+// Branch/tag → shallow clone of that ref. Commit SHA → full clone + checkout
+// (a depth-1 clone can't reach an arbitrary historical commit).
+export function cloneRepo(url: string, token?: string, ref?: string): TargetRepo {
   const { owner, name } = parseRepoUrl(url);
   const dir = mkdtempSync(join(tmpdir(), "auditflow-"));
   const auth = token ? `https://x-access-token:${token}@github.com/${owner}/${name}.git` : url;
-  const res = spawnSync("git", ["clone", "--depth", "1", auth, dir], { encoding: "utf8" });
+  const isCommit = !!ref && /^[0-9a-f]{7,40}$/i.test(ref);
+
+  const cloneArgs = ref && !isCommit
+    ? ["clone", "--depth", "1", "--branch", ref, auth, dir]
+    : isCommit
+      ? ["clone", auth, dir]                       // full clone so the SHA is reachable
+      : ["clone", "--depth", "1", auth, dir];
+  const res = spawnSync("git", cloneArgs, { encoding: "utf8" });
   if (res.status !== 0) throw new Error(`clone failed: ${res.stderr}`);
+
+  if (isCommit) {
+    const co = spawnSync("git", ["checkout", ref!], { cwd: dir, encoding: "utf8" });
+    if (co.status !== 0) throw new Error(`checkout ${ref} failed: ${co.stderr}`);
+  }
+
   const branch = spawnSync("git", ["rev-parse", "--abbrev-ref", "HEAD"], { cwd: dir, encoding: "utf8" })
     .stdout.trim() || "main";
   return { url, owner, name, defaultBranch: branch, localPath: dir, contracts: [], framework: "unknown" };

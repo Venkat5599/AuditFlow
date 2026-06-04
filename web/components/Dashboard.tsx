@@ -140,6 +140,9 @@ export default function Dashboard() {
                 </div>
               ))}
         </div>
+        <a href="/dashboard/new" className="mt-2 flex items-center justify-center gap-2 rounded-xl bg-foreground px-3 py-2.5 text-[13px] font-medium text-background hover:opacity-90">
+          <Plus className="h-4 w-4" /> New audit
+        </a>
         <a href="/" className="mt-2 flex items-center gap-2 px-2.5 text-[12px] text-muted-foreground hover:text-foreground"><ArrowLeft className="h-3.5 w-3.5" /> Back to site</a>
       </aside>
 

@@ -1,4 +1,4 @@
-// POST /api/audit  { url } -> streams audit events (SSE), ends with report + sessionId.
+// POST /api/audit  { url, ref?, scopeFiles? } -> streams audit events (SSE), ends with report + sessionId.
 // PR creation is a separate triage step (/api/pr) so users can pick findings first.
 import { runAudit } from "../../../../src/orchestrator/pipeline";
 import { saveSession } from "../../../../src/orchestrator/sessions";
@@ -13,7 +13,7 @@ function cookie(req: Request, name: string): string | null {
 }
 
 export async function POST(req: Request) {
-  const { url } = await req.json();
+  const { url, ref, scopeFiles } = await req.json();
   const token = cookie(req, "af_gh_token")
     ?? req.headers.get("x-github-token")
     ?? process.env.GITHUB_TOKEN
@@ -27,6 +27,8 @@ export async function POST(req: Request) {
         // Audit only — never PR here. Triage happens after in /api/pr.
         const { report } = await runAudit({
           url, githubToken: token, createPR: false,
+          ref: ref || undefined,
+          scopeFiles: Array.isArray(scopeFiles) ? scopeFiles : undefined,
           onEvent: (e) => send({ type: "event", ...e }),
         });
         const sessionId = saveSession(report);

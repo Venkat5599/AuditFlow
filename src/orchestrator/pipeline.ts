@@ -12,6 +12,8 @@ import { buildReport } from "../report/report";
 export interface RunOptions {
   url: string;
   githubToken?: string;   // for clone (private) + PR
+  ref?: string;           // branch / tag / commit to audit (default branch if absent)
+  scopeFiles?: string[];  // manual contract scope — relative .sol paths; empty = agents decide
   createPR?: boolean;
   onEvent?: (e: { phase: string; detail: string }) => void;
 }
@@ -22,13 +24,24 @@ export async function runAudit(opts: RunOptions): Promise<{ report: AuditReport;
   const startedAt = new Date().toISOString();
 
   sweepTemp(); // clear any stale clones from abandoned runs first
-  emit({ phase: "clone", detail: opts.url });
-  const repo = cloneRepo(opts.url, opts.githubToken);
+  emit({ phase: "clone", detail: opts.ref ? `${opts.url} @ ${opts.ref}` : opts.url });
+  const repo = cloneRepo(opts.url, opts.githubToken, opts.ref);
 
   emit({ phase: "detect", detail: repo.localPath });
   repo.contracts = findContracts(repo.localPath);
   repo.framework = detectFramework(repo.localPath);
   if (repo.contracts.length === 0) throw new Error("No Solidity contracts found in repo");
+
+  // Manual scope — narrow detected contracts to the user-picked .sol files.
+  const scope = opts.scopeFiles?.filter(Boolean) ?? [];
+  if (scope.length) {
+    const want = new Set(scope.map((p) => p.replace(/^\.?\//, "")));
+    const picked = repo.contracts.filter((c) => want.has(c.replace(/^\.?\//, "")));
+    if (picked.length) {
+      repo.contracts = picked;
+      emit({ phase: "scope", detail: `${picked.length} contract(s) selected manually` });
+    }
+  }
 
   emit({ phase: "route", detail: `${repo.contracts.length} contracts` });
   const { tools, signals } = routeTools(repo, hubRoot);
