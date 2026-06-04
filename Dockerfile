@@ -2,9 +2,10 @@
 FROM oven/bun:1.3 AS base
 WORKDIR /app
 
-# System deps the engine shells out to: git (clone), python+pip (slither/aderyn optional).
+# System deps the engine shells out to: git (clone), patch (fuzzy diff fallback for
+# the PR gate), python+pip (slither/aderyn optional).
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    git ca-certificates python3 python3-pip \
+    git patch ca-certificates python3 python3-pip \
   && rm -rf /var/lib/apt/lists/*
 # Static analyzers (optional but recommended for the deterministic baseline).
 RUN pip3 install --break-system-packages slither-analyzer || true
