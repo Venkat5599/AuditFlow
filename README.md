@@ -72,7 +72,7 @@ Mantle's Turing Test hackathon Track 05 is about **AI tools that make building o
 |----------|-----|
 | **Live App** | [auditflow-theta.vercel.app](https://auditflow-theta.vercel.app) |
 | **New Audit** | [auditflow-theta.vercel.app/dashboard/new](https://auditflow-theta.vercel.app/dashboard/new) |
-| **Repository** | [github.com/Venkat5599/Garu](https://github.com/Venkat5599/Garu) |
+| **Repository** | [github.com/Venkat5599/AuditFlow](https://github.com/Venkat5599/AuditFlow) |
 
 ### Architecture (Deployment)
 
@@ -121,8 +121,8 @@ GitHub URL ──▶ clone (branch/tag/commit) ──▶ detect (.sol + framewor
 
 ```bash
 # 1. Clone
-git clone https://github.com/Venkat5599/Garu.git
-cd Garu
+git clone https://github.com/Venkat5599/AuditFlow.git
+cd AuditFlow
 
 # 2. Install (bun)
 bun install
@@ -204,7 +204,7 @@ docker run -p 3000:3000 --env-file .env auditflow
 ## 📁 Project Structure
 
 ```
-Garu/  (auditflow)
+AuditFlow/
 ├── src/
 │   ├── orchestrator/   # pipeline spine: clone→detect→route→audit→report→fix→PR
 │   ├── routing/        # tool registry + signal-based relevance router
