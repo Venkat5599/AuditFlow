@@ -42,7 +42,7 @@ export async function generateFixes(
   repo: TargetRepo,
   findings: Finding[],
   emit: (e: { phase: string; detail: string }) => void = () => {},
-  max = Number(process.env.AUDITFLOW_MAX_FIXES ?? 6),
+  max = Number(process.env.AUDITFLOW_MAX_FIXES ?? 3), // ~60s/fix on free gateway; keep under the 300s PR budget
 ): Promise<void> {
   if (!repo.localPath) return;
   const candidates = findings.filter(
