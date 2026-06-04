@@ -31,11 +31,17 @@ const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
 // Retries on 429 (free-tier rate limit) with exponential backoff.
 async function chat(base: string, key: string, model: string, prompt: string): Promise<string> {
   for (let attempt = 0; attempt < 4; attempt++) {
-    const r = await fetch(`${base}/chat/completions`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
-      body: JSON.stringify({ model, messages: [{ role: "user", content: prompt }], temperature: 0 }),
-    });
+    const ac = new AbortController();
+    const to = setTimeout(() => ac.abort(), 90_000); // don't let one call hang the run
+    let r: Response;
+    try {
+      r = await fetch(`${base}/chat/completions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
+        body: JSON.stringify({ model, messages: [{ role: "user", content: prompt }], temperature: 0 }),
+        signal: ac.signal,
+      });
+    } finally { clearTimeout(to); }
     if (r.status === 429) {
       const wait = Number(r.headers.get("retry-after")) * 1000 || 1500 * 2 ** attempt;
       await sleep(Math.min(wait, 15000));

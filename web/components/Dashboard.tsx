@@ -90,8 +90,12 @@ export default function Dashboard() {
   // expired (in-memory store, lost on restart). Errors surface in the banner.
   async function createPR() {
     if (!latest || prBusy) return;
-    const ids = latest.findings.filter((f) => f.suggestedDiff).map((f) => f.id);
-    if (ids.length === 0) { setPrErr("No auto-fixable findings to PR."); return; }
+    // Diffs are generated server-side at PR time; select fixable severities (High/Med/Low),
+    // or any finding that already carries a diff.
+    const ids = latest.findings
+      .filter((f) => f.suggestedDiff || ["High", "Medium", "Low"].includes(f.severity))
+      .map((f) => f.id);
+    if (ids.length === 0) { setPrErr("No fixable findings to PR."); return; }
     setPrBusy(true); setPrErr("");
     try {
       const r = await fetch("/api/pr", {
@@ -112,7 +116,7 @@ export default function Dashboard() {
     }
   }
 
-  const fixable = latest?.findings.filter((f) => f.suggestedDiff).length ?? 0;
+  const fixable = latest?.findings.filter((f) => f.suggestedDiff || ["High", "Medium", "Low"].includes(f.severity)).length ?? 0;
 
   // VSCode-style explorer: list a repo's .sol files (git-tree API, no clone).
   async function loadCode(repoStr: string) {

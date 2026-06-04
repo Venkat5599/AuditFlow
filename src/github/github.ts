@@ -9,6 +9,7 @@ import { Octokit } from "@octokit/rest";
 import type { AuditReport, Finding, TargetRepo } from "../types";
 import { validateDiffs, safeDiffs } from "./validate";
 import { applyPatch } from "./patch";
+import { generateFixes } from "../engine/fixer";
 
 export function parseRepoUrl(url: string): { owner: string; name: string } {
   const m = url.replace(/\.git$/, "").match(/github\.com[/:]([^/]+)\/([^/]+)/);
@@ -73,14 +74,19 @@ export async function openFixPR(
   const chosen = selectedIds?.length
     ? report.findings.filter((f) => selectedIds.includes(f.id))
     : report.findings;
-  const withDiffs = chosen.filter((f) => f.suggestedDiff?.trim());
-  if (withDiffs.length === 0) throw new Error("No fixes selected to apply");
+  if (chosen.length === 0) throw new Error("No findings selected");
 
   // Fresh transient clone for the PR operation.
   const fresh = cloneRepo(repo.url, token);
   try {
+    // Generate applicable diffs for chosen findings that lack one (full-file rewrite
+    // -> git diff, guaranteed to apply). Runs against this fresh clone.
+    await generateFixes(fresh, chosen);
+    const ready = chosen.filter((f) => f.suggestedDiff?.trim());
+    if (ready.length === 0) throw new Error("Could not generate any applicable fixes for the selected findings");
+
     // Validate diffs against this clone (apply-check + compile gate).
-    const validation = validateDiffs(fresh, withDiffs);
+    const validation = validateDiffs(fresh, ready);
     const fixes = safeDiffs(validation);
     const rejected = validation.length - fixes.length;
     if (fixes.length === 0) throw new Error("No diffs passed the validation gate");
