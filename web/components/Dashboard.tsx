@@ -1,7 +1,8 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
-import { LayoutDashboard, ShieldAlert, FileSearch, GitPullRequest, Bot, FolderGit2, Plus, ArrowLeft } from "lucide-react";
+import { LayoutDashboard, ShieldAlert, FileSearch, GitPullRequest, Bot, FolderGit2, Plus, ArrowLeft, Code2 } from "lucide-react";
 import ChatAgent from "@/components/ChatAgent";
+import CodeViewer from "@/components/CodeViewer";
 
 type Sev = "High" | "Medium" | "Low" | "QA" | "Gas";
 type Finding = { id: string; severity: Sev; title: string; file: string; lines: [number, number]; tool: string; suggestedDiff?: string };
@@ -20,7 +21,7 @@ const HIST_KEY = "auditflow.history";
 const loadHist = (): Audit[] => { try { return JSON.parse(localStorage.getItem(HIST_KEY) || "[]"); } catch { return []; } };
 const saveHist = (h: Audit[]) => localStorage.setItem(HIST_KEY, JSON.stringify(h.slice(0, 30)));
 
-type View = "dashboard" | "findings" | "prs" | "agent";
+type View = "dashboard" | "findings" | "prs" | "agent" | "code";
 
 export default function Dashboard() {
   const [view, setView] = useState<View>("dashboard");
@@ -31,6 +32,12 @@ export default function Dashboard() {
   const [user, setUser] = useState<{ login: string; avatar_url: string } | null>(null);
   const [repos, setRepos] = useState<{ name: string; full_name: string; html_url: string; language: string | null }[]>([]);
   const [prBusy, setPrBusy] = useState(false);
+  const [prErr, setPrErr] = useState("");
+  // Code (VSCode-style) explorer state.
+  const [codeRepo, setCodeRepo] = useState("");   // owner/name or full url
+  const [codeFiles, setCodeFiles] = useState<string[]>([]);
+  const [codeActive, setCodeActive] = useState<string | null>(null);
+  const [codeLoading, setCodeLoading] = useState(false);
 
   useEffect(() => { setHist(loadHist()); }, []);
   useEffect(() => { fetch("/api/auth/me").then((r) => (r.ok ? r.json() : null)).then(setUser).catch(() => {}); }, []);
@@ -78,25 +85,53 @@ export default function Dashboard() {
     setRunning(false); setUrl("");
   }
 
-  // Open an auto-fix PR for the latest audit (needs GitHub connected + a live session).
+  // Open an auto-fix PR for the latest audit. Sends the live sessionId when present,
+  // and always includes repo + findings so the PR still opens if the server session
+  // expired (in-memory store, lost on restart). Errors surface in the banner.
   async function createPR() {
-    if (!latest?.sessionId || prBusy) return;
-    setPrBusy(true);
+    if (!latest || prBusy) return;
     const ids = latest.findings.filter((f) => f.suggestedDiff).map((f) => f.id);
-    const r = await fetch("/api/pr", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sessionId: latest.sessionId, selectedIds: ids }) });
-    const j = await r.json();
-    if (j.prUrl) {
-      const next = hist.map((a) => (a === latest ? { ...a, prUrl: j.prUrl } : a));
-      setHist(next); saveHist(next); setView("prs");
-    } else { setLog((l) => [...l, `PR error: ${j.error}`]); }
-    setPrBusy(false);
+    if (ids.length === 0) { setPrErr("No auto-fixable findings to PR."); return; }
+    setPrBusy(true); setPrErr("");
+    try {
+      const r = await fetch("/api/pr", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId: latest.sessionId, repo: latest.repo, findings: latest.findings, selectedIds: ids }),
+      });
+      const j = await r.json();
+      if (j.prUrl) {
+        const next = hist.map((a) => (a === latest ? { ...a, prUrl: j.prUrl } : a));
+        setHist(next); saveHist(next); setView("prs");
+      } else {
+        setPrErr(j.error || `Request failed (${r.status})`);
+      }
+    } catch (e) {
+      setPrErr((e as Error).message || "Network error");
+    } finally {
+      setPrBusy(false);
+    }
   }
 
   const fixable = latest?.findings.filter((f) => f.suggestedDiff).length ?? 0;
 
+  // VSCode-style explorer: list a repo's .sol files (git-tree API, no clone).
+  async function loadCode(repoStr: string) {
+    const full = repoStr.trim().replace(/^https?:\/\/github\.com\//, "");
+    if (!full) return;
+    setCodeRepo(full); setCodeLoading(true); setCodeFiles([]); setCodeActive(null);
+    try {
+      const j = await fetch(`/api/contracts?url=${encodeURIComponent(`https://github.com/${full}`)}&ref=HEAD`).then((r) => r.json());
+      const files: string[] = j.files ?? [];
+      setCodeFiles(files); setCodeActive(files[0] ?? null);
+    } finally { setCodeLoading(false); }
+  }
+  // Auto-open the latest audited repo when first entering the Code view.
+  useEffect(() => { if (view === "code" && !codeRepo && latest) loadCode(latest.repo); /* eslint-disable-next-line */ }, [view]);
+
   const NAV: { id: View; icon: typeof LayoutDashboard; label: string }[] = [
     { id: "dashboard", icon: LayoutDashboard, label: "Dashboard" },
     { id: "findings", icon: ShieldAlert, label: "Findings" },
+    { id: "code", icon: Code2, label: "Code" },
     { id: "prs", icon: GitPullRequest, label: "Pull Requests" },
     { id: "agent", icon: Bot, label: "Agent" },
   ];
@@ -150,7 +185,7 @@ export default function Dashboard() {
       <main className="flex-1 overflow-auto p-5 sm:p-8">
         {/* run bar */}
         <div className="mb-6 flex items-center justify-between gap-3">
-          <h1 className="text-xl font-semibold">{view === "dashboard" ? "Audits" : view === "findings" ? "Findings" : view === "prs" ? "Pull Requests" : "Agent"}</h1>
+          <h1 className="text-xl font-semibold">{view === "dashboard" ? "Audits" : view === "findings" ? "Findings" : view === "code" ? "Code" : view === "prs" ? "Pull Requests" : "Agent"}</h1>
           <div className="flex items-center gap-2">
             {user ? (
               <span className="hidden items-center gap-1.5 rounded-lg border border-border bg-frame px-3 py-2 text-xs sm:flex">
@@ -162,7 +197,7 @@ export default function Dashboard() {
                 <GithubMark className="h-4 w-4" /> Connect GitHub
               </a>
             )}
-            {view !== "agent" && (
+            {view !== "agent" && view !== "code" && (
               <>
                 <input value={url} onChange={(e) => setUrl(e.target.value)} onKeyDown={(e) => e.key === "Enter" && run()}
                   placeholder="github.com/owner/repo" className="w-44 rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-ring sm:w-64" />
@@ -184,20 +219,23 @@ export default function Dashboard() {
         {view === "dashboard" && (
           <>
             {latest && fixable > 0 && (
-              <div className="mb-5 flex items-center justify-between rounded-xl border border-accent/60 bg-card-secondary p-3">
-                <span className="text-sm text-card-foreground">
-                  Latest audit on <b>{latest.repo}</b> · {fixable} auto-fixable finding(s){latest.prUrl ? " · PR opened" : ""}.
-                </span>
-                {latest.prUrl ? (
-                  <a href={latest.prUrl} className="rounded-lg bg-foreground px-4 py-2 text-sm font-medium text-background">View PR ⎇</a>
-                ) : user ? (
-                  <button onClick={createPR} disabled={prBusy || !latest.sessionId}
-                    className="rounded-lg bg-foreground px-4 py-2 text-sm font-medium text-background disabled:opacity-40">
-                    {prBusy ? "Opening PR…" : "Create auto-fix PR"}
-                  </button>
-                ) : (
-                  <a href="/api/auth/github" className="rounded-lg border border-border bg-frame px-4 py-2 text-sm font-medium">Connect GitHub to PR</a>
-                )}
+              <div className="mb-5 rounded-xl border border-accent/60 bg-card-secondary p-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-card-foreground">
+                    Latest audit on <b>{latest.repo}</b> · {fixable} auto-fixable finding(s){latest.prUrl ? " · PR opened" : ""}.
+                  </span>
+                  {latest.prUrl ? (
+                    <a href={latest.prUrl} className="rounded-lg bg-foreground px-4 py-2 text-sm font-medium text-background">View PR ⎇</a>
+                  ) : user ? (
+                    <button onClick={createPR} disabled={prBusy}
+                      className="rounded-lg bg-foreground px-4 py-2 text-sm font-medium text-background disabled:opacity-40">
+                      {prBusy ? "Opening PR…" : "Create auto-fix PR"}
+                    </button>
+                  ) : (
+                    <a href="/api/auth/github" className="rounded-lg border border-border bg-frame px-4 py-2 text-sm font-medium">Connect GitHub to PR</a>
+                  )}
+                </div>
+                {prErr && <p className="mt-2 text-xs text-red-500">PR failed: {prErr}</p>}
               </div>
             )}
             <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -259,6 +297,33 @@ export default function Dashboard() {
             {hist.filter((a) => a.prUrl).map((a, i) => (
               <a key={i} href={a.prUrl} className="rounded-xl border border-border bg-frame p-3 text-sm text-foreground hover:bg-muted">⎇ {a.repo} — {a.prUrl}</a>
             ))}
+          </div>
+        )}
+
+        {view === "code" && (
+          <div className="flex h-[calc(100vh-9rem)] flex-col">
+            <div className="mb-3 flex items-center gap-2">
+              <input value={codeRepo} onChange={(e) => setCodeRepo(e.target.value)} onKeyDown={(e) => e.key === "Enter" && loadCode(codeRepo)}
+                placeholder="owner/repo" className="w-64 rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-ring" />
+              <button onClick={() => loadCode(codeRepo)} disabled={codeLoading || !codeRepo.trim()}
+                className="rounded-lg bg-foreground px-4 py-2 text-sm font-medium text-background disabled:opacity-40">
+                {codeLoading ? "Loading…" : "Open"}
+              </button>
+              <span className="text-xs text-muted-foreground">{codeFiles.length > 0 && `${codeFiles.length} Solidity file(s)`}</span>
+            </div>
+            <div className="grid flex-1 grid-cols-[minmax(0,16rem)_1fr] overflow-hidden rounded-xl border border-border">
+              <div className="overflow-auto border-r border-border bg-frame p-2">
+                {codeLoading && <p className="px-2 py-3 text-xs text-muted-foreground">Loading…</p>}
+                {!codeLoading && codeFiles.length === 0 && <p className="px-2 py-3 text-xs text-muted-foreground">Enter a repo above to browse its contracts.</p>}
+                {codeFiles.map((f) => (
+                  <button key={f} onClick={() => setCodeActive(f)}
+                    className={`flex w-full items-center gap-1.5 rounded-lg px-2 py-1.5 text-left text-[12px] ${codeActive === f ? "bg-muted text-foreground" : "text-muted-foreground hover:bg-muted/60"}`}>
+                    <FolderGit2 className="h-3 w-3 shrink-0" /> <span className="truncate font-mono">{f.split("/").pop()}</span>
+                  </button>
+                ))}
+              </div>
+              <CodeViewer url={`https://github.com/${codeRepo.replace(/^https?:\/\/github\.com\//, "")}`} refName="HEAD" path={codeActive} />
+            </div>
           </div>
         )}
 
