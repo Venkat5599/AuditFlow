@@ -57,7 +57,7 @@ function runOpenCodeCli(prompt: string, cwd: string): string {
   return res.stdout ?? "";
 }
 
-async function runEngine(prompt: string, cwd: string): Promise<string> {
+export async function runEngine(prompt: string, cwd: string): Promise<string> {
   if (process.env.AUDITFLOW_ENGINE === "opencode") return runOpenCodeCli(prompt, cwd);
   if (ZEN_KEY) return chat(ZEN_BASE, ZEN_KEY, MODEL, prompt);
   if (DEEPSEEK_KEY) return chat("https://api.deepseek.com", DEEPSEEK_KEY, "deepseek-chat", prompt);

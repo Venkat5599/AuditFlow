@@ -4,6 +4,7 @@ import { cloneRepo, openFixPR, cleanupClone, sweepTemp } from "../github/github"
 import { findContracts, detectFramework } from "../detect/detect";
 import { routeTools } from "../routing/router";
 import { runSkill } from "../engine/opencode";
+import { generateFixes } from "../engine/fixer";
 import { runAnalyzer } from "../engine/analyzers";
 import { runMantleDetectors } from "../mantle/detectors";
 import { attestOnMantle } from "../chain/attest";
@@ -76,6 +77,11 @@ export async function runAudit(opts: RunOptions): Promise<{ report: AuditReport;
 
   emit({ phase: "report", detail: `${all.length} raw findings` });
   const report = buildReport(repo, all, [...tools.map((t) => t.id), "mantle-detectors"], startedAt);
+
+  // Generate applicable auto-fix diffs (full-file rewrite -> git diff) for findings
+  // that lack one — must run while the clone is still on disk.
+  emit({ phase: "fix", detail: "generating auto-fixes" });
+  try { await generateFixes(repo, report.findings, emit); } catch (e) { emit({ phase: "fix", detail: `skipped: ${(e as Error).message}` }); }
 
   // Disk policy: the audit clone is no longer needed — delete it NOW, before the
   // (possibly long) attestation/PR steps and before any triage idle wait.
