@@ -26,10 +26,10 @@ function AuditFeedCard(): ReactNode {
       className="group flex min-h-140 flex-col overflow-hidden rounded-4xl bg-card-primary p-8 md:row-span-2">
       <div className="mb-6 text-center transition-transform duration-500 ease-out group-hover:scale-105">
         <h3 className="mb-3 text-2xl font-medium leading-tight text-neutral-900 md:text-4xl">
-          31 audit skills, one orchestrator
+          31 audit tools, one orchestrator
         </h3>
         <p className="text-sm text-neutral-700">
-          pashov agents, QuillAI detectors, nemesis, Slither &amp; Aderyn — routed by signal, deduped, graded.
+          Static analyzers and LLM security detectors, with Mantle L2 checks — routed by signal, deduped, graded.
         </p>
       </div>
       <div className="flex flex-1 items-end justify-center">
@@ -37,9 +37,9 @@ function AuditFeedCard(): ReactNode {
           <div className="text-neutral-500">› clone github.com/owner/vault</div>
           <div className="text-neutral-500">› route · signals: reentrancy, oracle</div>
           <div>› slither ✓  aderyn ✓  mantle ✓</div>
-          <div>› pashov-vector-scan (1/12)</div>
-          <div>› qs-reentrancy (2/12)</div>
-          <div>› qs-oracle-flashloan (3/12)</div>
+          <div>› reentrancy-scan (1/12)</div>
+          <div>› access-control (2/12)</div>
+          <div>› oracle-flashloan (3/12)</div>
           <div className="text-white">› report · 11 findings</div>
           <div className="mt-2 flex flex-wrap gap-1">
             {SEV.map((s) => (

@@ -4,7 +4,7 @@ import { useRef, useEffect, useState } from "react";
 import type { ReactNode } from "react";
 
 const headline =
-  "31 audit skills — pashov agents, QuillAI detectors, nemesis, plus Slither and Aderyn — orchestrated by signal, deduped, and graded into a Code4rena-style report with validated auto-fix pull requests.";
+  "31 audit tools — static analyzers and LLM security detectors — orchestrated by signal, deduped, and graded into a Code4rena-style report with validated auto-fix pull requests, tuned for Mantle Solidity code.";
 
 export function BlurInHeadline(): ReactNode {
   const containerRef = useRef<HTMLDivElement>(null);

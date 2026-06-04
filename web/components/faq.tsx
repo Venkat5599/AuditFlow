@@ -8,12 +8,12 @@ const faqs = [
   {
     question: "What does AuditFlow actually do?",
     answer:
-      "You connect GitHub and paste a Solidity repo. AuditFlow clones it, routes it through 31 audit skills + static analyzers + Mantle L2 detectors, produces a Code4rena-style report graded by severity (High/Medium/Low/QA/Gas), and can open a validated auto-fix pull request on the repo.",
+      "You connect GitHub and paste a Solidity repo. AuditFlow clones it, routes it through 31 audit tools + static analyzers + Mantle L2 detectors, produces a Code4rena-style report graded by severity (High/Medium/Low/QA/Gas), and can open a validated auto-fix pull request on the repo.",
   },
   {
-    question: "Which tools and skills does it run?",
+    question: "Which tools does it run?",
     answer:
-      "Static analyzers Slither and Aderyn for a deterministic baseline, plus 31 LLM audit skills — the 8 pashov solidity-auditor agents, 11 QuillAI (qs_skills) detectors, the nemesis auditors, and more. A signal-based router picks only the relevant skills per repo instead of running everything blindly.",
+      "Static analyzers Slither and Aderyn for a deterministic baseline, plus 31 LLM-driven security detectors covering reentrancy, access control, oracle/flashloan, accounting, and proxy patterns — and Mantle L2-specific checks. A signal-based router picks only the relevant tools per repo instead of running everything blindly.",
   },
   {
     question: "What is Mantle-specific about it?",

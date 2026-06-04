@@ -16,7 +16,7 @@ const steps = [
     icon: Users,
     title: "Route & audit",
     description:
-      "A signal-based router picks the relevant skills — pashov, QuillAI, nemesis — and runs them with Slither, Aderyn, and Mantle L2 detectors in parallel, deduped.",
+      "A signal-based router picks the relevant audit tools and runs them with Slither, Aderyn, and Mantle L2 detectors in parallel, deduped.",
   },
   {
     icon: Rocket,

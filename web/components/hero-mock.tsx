@@ -16,7 +16,7 @@ const STATS = [
   { label: "High severity", value: "6", trend: "+2", sub: "across 3 contracts", up: false },
   { label: "Auto-fix PRs", value: "4", trend: "+4", sub: "validated & opened", up: true },
   { label: "Repos audited", value: "128", trend: "+12%", sub: "this week", up: true },
-  { label: "Skills run", value: "31", trend: "live", sub: "pashov · quillai · nemesis", up: true },
+  { label: "Tools run", value: "31", trend: "live", sub: "analyzers + LLM detectors", up: true },
 ];
 
 // Severity bars per recent audit (mock)
