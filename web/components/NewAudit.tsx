@@ -2,7 +2,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Check, ChevronDown, FolderGit2, Paperclip, ArrowLeft, Loader2 } from "lucide-react";
 import CodeViewer from "@/components/CodeViewer";
-import { LogoMark } from "@/components/Logo";
 
 const GithubMark = ({ className }: { className?: string }) => (
   <svg className={className} viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
@@ -131,9 +130,9 @@ export default function NewAudit() {
     <div className="flex min-h-screen flex-col bg-background text-foreground">
       {/* top bar */}
       <header className="flex items-center justify-between border-b border-border px-5 py-3.5 sm:px-8">
-        <div className="flex items-center gap-2 text-accent">
-          <LogoMark className="h-5 w-5" title="AuditFlow" />
-          <span className="text-sm font-semibold text-foreground">AuditFlow</span>
+        <div className="flex items-center gap-2">
+          <div className="h-5 w-5 rounded-full bg-accent" />
+          <span className="text-sm font-semibold">AuditFlow</span>
         </div>
         <a href="/dashboard" className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-3.5 w-3.5" /> Dashboard
