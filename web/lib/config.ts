@@ -21,7 +21,7 @@ export const heroConfig = {
 };
 
 export const blurHeadlineConfig = {
-  text: "31 audit tools — static analyzers and LLM security detectors — orchestrated by signal, deduped, and graded into a Code4rena-style report with validated auto-fix pull requests, tuned for Mantle Solidity code.",
+  text: "31 audit tools. Static analyzers and LLM security detectors, orchestrated by signal, deduped, and graded into a Code4rena-style report with validated auto-fix pull requests, tuned for Mantle Solidity code.",
 };
 
 export const testimonialsConfig = {
