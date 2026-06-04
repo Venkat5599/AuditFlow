@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import { Check, ChevronDown, FolderGit2, Paperclip, ArrowLeft, Loader2 } from "lucide-react";
+import CodeViewer from "@/components/CodeViewer";
 
 const GithubMark = ({ className }: { className?: string }) => (
   <svg className={className} viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
@@ -39,6 +40,7 @@ export default function NewAudit() {
   const [scopeMode, setScopeMode] = useState<"auto" | "manual">("auto");
   const [solFiles, setSolFiles] = useState<string[]>([]);
   const [picked, setPicked] = useState<Set<string>>(new Set());
+  const [activeFile, setActiveFile] = useState<string | null>(null);
   const [docs, setDocs] = useState("");
   const [loadingBranches, setLoadingBranches] = useState(false);
   const [loadingFiles, setLoadingFiles] = useState(false);
@@ -80,7 +82,9 @@ export default function NewAudit() {
       setLoadingFiles(true);
       try {
         const j = await fetch(`/api/contracts?url=${encodeURIComponent(url.trim())}&ref=${encodeURIComponent(ref || "HEAD")}`).then((r) => r.json());
-        setSolFiles(j.files ?? []);
+        const files: string[] = j.files ?? [];
+        setSolFiles(files);
+        setActiveFile(files[0] ?? null);
       } finally { setLoadingFiles(false); }
     }
     setStep(3);
@@ -274,15 +278,23 @@ export default function NewAudit() {
               {scopeMode === "manual" && (
                 <div className="mb-6">
                   <h2 className="text-lg font-semibold">Select contracts</h2>
-                  <p className="mt-1 text-sm text-muted-foreground">{solFiles.length} Solidity file(s) found · {picked.size} selected.</p>
-                  <div className="mt-3 max-h-52 space-y-1 overflow-auto rounded-xl border border-border bg-background p-2">
-                    {solFiles.length === 0 && <p className="px-2 py-3 text-sm text-muted-foreground">No .sol files found at this ref. Agents will decide instead.</p>}
-                    {solFiles.map((f) => (
-                      <label key={f} className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-[13px] hover:bg-muted">
-                        <input type="checkbox" checked={picked.has(f)} onChange={() => togglePick(f)} className="accent-accent" />
-                        <span className="truncate font-mono text-xs">{f}</span>
-                      </label>
-                    ))}
+                  <p className="mt-1 text-sm text-muted-foreground">{solFiles.length} Solidity file(s) found · {picked.size} selected. Click a file to view its source.</p>
+                  {/* VSCode-style split: file tree (checkbox + open) · code pane */}
+                  <div className="mt-3 grid h-[420px] grid-cols-[minmax(0,16rem)_1fr] overflow-hidden rounded-xl border border-border">
+                    <div className="overflow-auto border-r border-border bg-background p-2">
+                      {solFiles.length === 0 && <p className="px-2 py-3 text-xs text-muted-foreground">No .sol files at this ref. Agents will decide instead.</p>}
+                      {solFiles.map((f) => (
+                        <div key={f}
+                          className={`flex items-center gap-2 rounded-lg px-2 py-1.5 text-[12px] ${activeFile === f ? "bg-muted" : "hover:bg-muted/60"}`}>
+                          <input type="checkbox" checked={picked.has(f)} onChange={() => togglePick(f)} className="accent-accent" />
+                          <button onClick={() => setActiveFile(f)} className="flex min-w-0 items-center gap-1.5 text-left">
+                            <FolderGit2 className="h-3 w-3 shrink-0 text-muted-foreground" />
+                            <span className="truncate font-mono">{f.split("/").pop()}</span>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                    <CodeViewer url={url.trim()} refName={ref || "HEAD"} path={activeFile} />
                   </div>
                 </div>
               )}

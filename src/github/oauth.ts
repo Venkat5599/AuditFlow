@@ -89,3 +89,14 @@ export async function listSolFiles(owner: string, name: string, ref: string, tok
     .map((t: any) => t.path as string)
     .sort();
 }
+
+// Fetch a single file's text at a ref via the contents API (no clone).
+export async function getFileContent(owner: string, name: string, path: string, ref: string, token?: string): Promise<string> {
+  const r = await gh(`/repos/${owner}/${name}/contents/${path.split("/").map(encodeURIComponent).join("/")}?ref=${encodeURIComponent(ref)}`, token);
+  if (!r.ok) throw new Error(`file fetch failed (${r.status})`);
+  const j = (await r.json()) as any;
+  if (typeof j.content === "string" && j.encoding === "base64") {
+    return Buffer.from(j.content, "base64").toString("utf8");
+  }
+  throw new Error("unsupported file response");
+}
