@@ -15,8 +15,19 @@ Return findings as a single fenced JSON array. Each item:
   "description": "root cause",
   "poc": "concrete steps or code (optional)",
   "recommendation": "how to fix",
-  "suggestedDiff": "unified diff that fixes it (optional, valid patch)"
+  "suggestedDiff": "git-applicable unified diff (optional) — see diff rules"
 }
+
+suggestedDiff rules (a malformed diff is useless — follow exactly):
+- Use real git unified-diff format with a/ and b/ prefixes:
+    --- a/<exact file path from the list above>
+    +++ b/<same path>
+    @@ -<oldStart>,<oldCount> +<newStart>,<newCount> @@
+- The file path MUST be the exact relative path shown in the contracts list (e.g. "src/Vault.sol"), not just the file name.
+- Include 3 lines of UNCHANGED context above and below each change; context lines start with a single space and must match the source verbatim.
+- Only change what the fix requires. Keep hunks small. Escape newlines as \\n in the JSON string.
+- If you are not confident the diff applies cleanly, omit suggestedDiff rather than guessing.
+
 Rules: report only real, exploitable issues. No false positives. If none, return [].
 Output ONLY the JSON block, nothing else.
 `;

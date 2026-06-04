@@ -8,6 +8,7 @@ import { join } from "node:path";
 import { Octokit } from "@octokit/rest";
 import type { AuditReport, Finding, TargetRepo } from "../types";
 import { validateDiffs, safeDiffs } from "./validate";
+import { applyPatch } from "./patch";
 
 export function parseRepoUrl(url: string): { owner: string; name: string } {
   const m = url.replace(/\.git$/, "").match(/github\.com[/:]([^/]+)\/([^/]+)/);
@@ -43,11 +44,13 @@ export function cloneRepo(url: string, token?: string, ref?: string): TargetRepo
   const auth = token ? `https://x-access-token:${token}@github.com/${owner}/${name}.git` : url;
   const isCommit = !!ref && /^[0-9a-f]{7,40}$/i.test(ref);
 
+  // --recurse-submodules so foundry `lib/` deps exist for the compile gate.
+  const sub = ["--recurse-submodules", "--shallow-submodules"];
   const cloneArgs = ref && !isCommit
-    ? ["clone", "--depth", "1", "--branch", ref, auth, dir]
+    ? ["clone", "--depth", "1", ...sub, "--branch", ref, auth, dir]
     : isCommit
-      ? ["clone", auth, dir]                       // full clone so the SHA is reachable
-      : ["clone", "--depth", "1", auth, dir];
+      ? ["clone", ...sub, auth, dir]               // full clone so the SHA is reachable
+      : ["clone", "--depth", "1", ...sub, auth, dir];
   const res = spawnSync("git", cloneArgs, { encoding: "utf8" });
   if (res.status !== 0) throw new Error(`clone failed: ${res.stderr}`);
 
@@ -88,9 +91,7 @@ export async function openFixPR(
 
     let applied = 0;
     for (const f of fixes) {
-      const patchFile = join(fresh.localPath, ".auditflow.patch");
-      writeFileSync(patchFile, f.suggestedDiff!.endsWith("\n") ? f.suggestedDiff! : f.suggestedDiff! + "\n");
-      if (sh(["apply", "--whitespace=fix", patchFile]).status === 0) applied++;
+      if (applyPatch(fresh.localPath, f.suggestedDiff!, { check: false, file: f.file })) applied++;
     }
     if (applied === 0) throw new Error("No diffs applied cleanly");
 
