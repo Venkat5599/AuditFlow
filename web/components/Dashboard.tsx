@@ -143,7 +143,7 @@ export default function Dashboard() {
   const maxTotal = Math.max(1, ...hist.slice(0, 12).map((a) => a.summary.High + a.summary.Medium + a.summary.Low));
 
   return (
-    <div className="flex h-screen overflow-hidden bg-background text-foreground">
+    <div className="flex h-[100dvh] overflow-hidden bg-background text-foreground">
       {/* sidebar */}
       <aside className="hidden w-60 shrink-0 flex-col border-r border-border bg-frame p-4 md:flex">
         <div className="mb-4 flex items-center justify-between gap-2">
