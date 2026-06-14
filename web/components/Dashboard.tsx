@@ -151,7 +151,7 @@ export default function Dashboard() {
             <div className="h-5 w-5 rounded-full bg-accent" />
             <span className="text-sm font-semibold">AuditFlow</span>
           </div>
-          <a href="/" className="flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] text-muted-foreground hover:bg-muted hover:text-foreground" title="Back to site">
+          <a href="/" className="flex items-center gap-1 rounded-lg border border-border px-2 py-1 text-[11px] font-medium text-foreground/90 hover:bg-muted hover:text-foreground" title="Back to site">
             <ArrowLeft className="h-3.5 w-3.5" /> Site
           </a>
         </div>
