@@ -223,10 +223,21 @@ AuditFlow/
 
 `contracts/AuditRegistry.sol` records each audit `(repoId, reportHash, H/M/L counts, auditor)` on Mantle, so reports are **tamper-evident**. Env-gated - set `AUDITFLOW_REGISTRY` to enable.
 
+### 🟢 Live on Mantle Sepolia (chainid 5003)
+
+| Item | Value |
+|------|-------|
+| **AuditRegistry** | [`0x0186f012BAfda75DF6F65142B81e9bf1037C02DD`](https://sepolia.mantlescan.xyz/address/0x0186f012BAfda75DF6F65142B81e9bf1037C02DD) |
+| **Deploy tx** | [`0x0735c0a2…420627`](https://sepolia.mantlescan.xyz/tx/0x0735c0a20ba0b665c3106093bd3ec6854e811774a56243af2fc4dc41d4420627) |
+| **Sample attestation tx** | [`0x9be0083f…97622d`](https://sepolia.mantlescan.xyz/tx/0x9be0083fe4cd78886ad1ca834aeed5bb82bd4247bee3573714ab20b51597622d) |
+
+End-to-end verified on-chain: `count() = 1`, `verifyLatest(repoId, reportHash) = true`.
+
 ```bash
 # Deploy the registry to Mantle Sepolia (chainid 5003) or mainnet (5000)
 cd contracts
-forge script script/Deploy.s.sol --rpc-url mantle_sepolia --broadcast
+forge install foundry-rs/forge-std   # one-time: pulls the Script/console deps
+forge script script/Deploy.s.sol --rpc-url mantle_sepolia --broadcast --private-key $PRIVATE_KEY
 ```
 
 ### Network Details
@@ -260,7 +271,8 @@ Mantle Sepolia   Chain ID 5003   https://rpc.sepolia.mantle.xyz
 - [x] Diff validation gate (apply + compile)
 - [x] **Generated, validated auto-fix PRs**
 - [x] Live on Vercel + VPS engine
-- [ ] Mantle testnet deploy of the attestation registry
+- [x] **Mantle testnet deploy of the attestation registry** ([live on Sepolia](https://sepolia.mantlescan.xyz/address/0x0186f012BAfda75DF6F65142B81e9bf1037C02DD), attestation verified on-chain)
+- [ ] Mantle mainnet deploy (pending real MNT for gas)
 - [ ] Multi-chain expansion beyond Mantle
 
 ---
