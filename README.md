@@ -21,7 +21,7 @@
 
 ## 📋 Project Overview
 
-**AuditFlow** is an agent-orchestrated security auditor for Solidity / EVM code. You connect a GitHub repo (or paste a public URL); AuditFlow clones it, routes it through **31 audit tools** plus Mantle L2-specific detectors, grades the findings into a **Code4rena-style report**, and opens a **validated auto-fix pull request** on the repo.
+**AuditFlow** is an agent-orchestrated security auditor for Solidity / EVM code. You connect a GitHub repo (or paste a public URL); AuditFlow clones it, routes it through a **full audit arsenal** plus Mantle L2-specific detectors, grades the findings into a **Code4rena-style report**, and opens a **validated auto-fix pull request** on the repo.
 
 ### What It Does
 
@@ -157,8 +157,8 @@ docker run -p 3000:3000 --env-file .env auditflow
 | Layer | What runs |
 |-------|-----------|
 | **Static analyzers** | Slither, Aderyn - deterministic, high-confidence baseline |
-| **LLM detectors** | 31 audit tools covering reentrancy, access control, oracle/flashloan, accounting, proxy patterns |
-| **Mantle L2 detectors** | 7 checks specific to Mantle's gas model and EVM target |
+| **LLM detectors** | Audit arsenal covering reentrancy, access control, oracle/flashloan, accounting, proxy patterns |
+| **Mantle L2 detectors** | Checks specific to Mantle's gas model and EVM target |
 | **Router** | Signal-based - picks only the relevant tools per repo, never all at once |
 | **Fix generator** | Full-file rewrite → `git diff` (guaranteed-applicable patches) |
 | **Validation gate** | `git apply` + compile (`forge build` / `hardhat compile`) on an isolated copy |
@@ -187,7 +187,7 @@ docker run -p 3000:3000 --env-file .env auditflow
           ▼                 ▼                     ▼
    ┌─────────────┐   ┌─────────────┐      ┌─────────────┐
    │  Analyzers  │   │ LLM audit   │      │  Mantle L2  │
-   │  Slither    │   │ tools (31)  │      │  detectors  │
+   │  Slither    │   │ LLM tools   │      │  detectors  │
    │  Aderyn     │   │ OpenCode Zen│      │  gas/RNG/   │
    │             │   │ + DeepSeek  │      │  evmVersion │
    └─────────────┘   └─────────────┘      └─────────────┘
@@ -263,7 +263,7 @@ Mantle Sepolia   Chain ID 5003   https://rpc.sepolia.mantle.xyz
 ## 📈 Status
 
 - [x] GitHub OAuth + repo listing
-- [x] Signal-based routing (31 tools, not all-at-once)
+- [x] Signal-based routing (full arsenal, not all-at-once)
 - [x] Slither + Aderyn baseline, deduped against LLM findings
 - [x] Mantle L2 detectors
 - [x] Code4rena-style graded report

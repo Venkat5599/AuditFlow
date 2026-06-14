@@ -247,7 +247,7 @@ export default function Dashboard() {
                 { label: "High severity", value: stats.high, sub: `across ${stats.contracts} contracts`, t: "latest" },
                 { label: "Auto-fix PRs", value: stats.prs, sub: "validated & opened", t: "total" },
                 { label: "Repos audited", value: stats.repos, sub: "all time", t: "" },
-                { label: "Tools run", value: 31, sub: "analyzers + LLM detectors", t: "live" },
+                { label: "Severity tiers", value: 5, sub: "H · M · L · QA · Gas", t: "live" },
               ].map((s) => (
                 <div key={s.label} className="rounded-xl border border-border bg-frame p-4">
                   <div className="flex items-center justify-between"><span className="text-[11px] text-muted-foreground">{s.label}</span><span className="text-[10px] text-emerald-600">{s.t}</span></div>

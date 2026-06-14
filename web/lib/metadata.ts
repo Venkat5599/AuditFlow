@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 export const siteConfig = {
   name: "AuditFlow",
-  description: "Agent-orchestrated Solidity security auditing for Mantle — 31 audit tools, C4-style report, validated auto-PR.",
+  description: "Agent-orchestrated Solidity security auditing for Mantle — full audit arsenal, C4-style report, validated auto-PR.",
   url: "https://auditflow-theta.vercel.app",
   ogImage: "/og-image.png",
   creator: "@auditflow",

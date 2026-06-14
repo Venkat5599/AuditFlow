@@ -18,7 +18,7 @@ const fadeInScale = {
   visible: { opacity: 1, scale: 1, filter: "blur(0px)" },
 };
 
-const TOOLS = ["Slither", "Aderyn", "31 audit tools", "LLM detectors", "Mantle L2", "Foundry", "Octokit", "DeepSeek", "Code4rena"];
+const TOOLS = ["Slither", "Aderyn", "Audit arsenal", "LLM detectors", "Mantle L2", "Foundry", "Octokit", "DeepSeek", "Code4rena"];
 const logos: LogoItem[] = TOOLS.map((name) => ({
   node: <span className="text-xl font-semibold tracking-tight text-black/70">{name}</span>,
 }));
@@ -71,7 +71,7 @@ export function Hero(): ReactNode {
             variants={fadeInUp}
             transition={{ duration: 0.8, ease }}
           >
-            Connect GitHub, paste a repo. AuditFlow routes it through 31 audit tools + Mantle L2 detectors, writes a Code4rena-style report, and opens a validated auto-fix PR.
+            Connect GitHub, paste a repo. AuditFlow routes it through a full audit arsenal + Mantle L2 detectors, writes a Code4rena-style report, and opens a validated auto-fix PR.
           </motion.p>
 
           <motion.a
