@@ -146,9 +146,14 @@ export default function Dashboard() {
     <div className="flex h-screen overflow-hidden bg-background text-foreground">
       {/* sidebar */}
       <aside className="hidden w-60 shrink-0 flex-col border-r border-border bg-frame p-4 md:flex">
-        <div className="mb-6 flex items-center gap-2">
-          <div className="h-5 w-5 rounded-full bg-accent" />
-          <span className="text-sm font-semibold">AuditFlow</span>
+        <div className="mb-4 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <div className="h-5 w-5 rounded-full bg-accent" />
+            <span className="text-sm font-semibold">AuditFlow</span>
+          </div>
+          <a href="/" className="flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] text-muted-foreground hover:bg-muted hover:text-foreground" title="Back to site">
+            <ArrowLeft className="h-3.5 w-3.5" /> Site
+          </a>
         </div>
         <div className="mb-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Workspace</div>
         <nav className="mb-6 space-y-0.5">
@@ -182,7 +187,6 @@ export default function Dashboard() {
         <a href="/dashboard/new" className="mt-2 flex items-center justify-center gap-2 rounded-xl bg-foreground px-3 py-2.5 text-[13px] font-medium text-background hover:opacity-90">
           <Plus className="h-4 w-4" /> New audit
         </a>
-        <a href="/" className="mt-2 flex items-center gap-2 px-2.5 text-[12px] text-muted-foreground hover:text-foreground"><ArrowLeft className="h-3.5 w-3.5" /> Back to site</a>
       </aside>
 
       {/* main */}
