@@ -190,7 +190,7 @@ export default function Dashboard() {
       </aside>
 
       {/* main */}
-      <main className="flex-1 overflow-auto p-5 sm:p-8">
+      <main className="min-h-0 flex-1 overflow-y-auto p-5 pb-16 sm:p-8 sm:pb-16">
         {/* run bar */}
         <div className="mb-6 flex items-center justify-between gap-3">
           <h1 className="text-xl font-semibold">{view === "dashboard" ? "Audits" : view === "findings" ? "Findings" : view === "code" ? "Code" : view === "prs" ? "Pull Requests" : "Agent"}</h1>
