@@ -272,8 +272,7 @@ Mantle Sepolia   Chain ID 5003   https://rpc.sepolia.mantle.xyz
 - [x] **Generated, validated auto-fix PRs**
 - [x] Live on Vercel + VPS engine
 - [x] **Mantle testnet deploy of the attestation registry** ([live on Sepolia](https://sepolia.mantlescan.xyz/address/0x0186f012BAfda75DF6F65142B81e9bf1037C02DD), attestation verified on-chain)
-- [ ] Mantle mainnet deploy (pending real MNT for gas)
-- [ ] Multi-chain expansion beyond Mantle
+
 
 ---
 
